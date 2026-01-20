@@ -1,0 +1,7 @@
+{
+  "name": "ZenLunar Calendar",
+  "description": "A modern, customizable Chinese calendar featuring Lunar dates, AI-powered daily insights, and dynamic theme generation using Google Gemini.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
