@@ -1,3 +1,4 @@
+
 import { CalendarDay } from '../types';
 import { MOCK_LUNAR_DATA } from '../constants';
 import * as LunarModule from 'lunar-javascript';
@@ -232,6 +233,8 @@ const createCalendarDay = (date: Date, isCurrentMonth: boolean): CalendarDay => 
     if (name === '接神日') name = '接神';
     if (name === '驱难日' || name === '驱傩日') name = '驱傩';
     if (name.includes('小年')) name = '小年'; // Unify "小年(北)" and "小年(南)"
+    if (name === '龙头' || name === '龙头节') name = '龙抬头'; // Merge Dragon Head to unified name
+    if (name === '隔开') name = '隔开日'; // Normalize
 
     // Logic: If user specifically wants "Ji Zao" only on 23rd (matching description)
     // we filter it out if it falls on 24th (which library might provide, or South China custom)
@@ -244,6 +247,15 @@ const createCalendarDay = (date: Date, isCurrentMonth: boolean): CalendarDay => 
         const d = lunarObj.getDay();
         if (m === 12 && d === 24) {
            return; // Skip adding '祭灶' on 24th
+        }
+    }
+
+    // Logic: Ensure "隔开日" is strictly on Lunar 1-4
+    if (name === '隔开日' && lunarObj) {
+        const m = lunarObj.getMonth();
+        const d = lunarObj.getDay();
+        if (m !== 1 || d !== 4) {
+            return; // Skip if not Jan 4th
         }
     }
 

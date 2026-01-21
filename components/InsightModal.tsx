@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { CalendarDay, DailyInsight } from '../types';
 import { getDailyInsight } from '../services/geminiService';
@@ -16,7 +17,13 @@ export const InsightModal: React.FC<InsightModalProps> = ({ day, onClose }) => {
     if (day) {
       setLoading(true);
       setInsight(null);
-      const dateStr = day.date.toLocaleDateString();
+      
+      // FIX: Use standard ISO Date format (YYYY-MM-DD) to ensure consistent history lookup
+      // Note: We need local date part, not UTC, to match the user's selected day
+      const offset = day.date.getTimezoneOffset() * 60000;
+      const localDate = new Date(day.date.getTime() - offset);
+      const dateStr = localDate.toISOString().split('T')[0];
+      
       const lunarStr = `${day.lunarMonth}${day.lunarDay}`;
       
       getDailyInsight(dateStr, lunarStr)
@@ -73,14 +80,16 @@ export const InsightModal: React.FC<InsightModalProps> = ({ day, onClose }) => {
                 </p>
               </div>
 
-              <div>
-                <div className="flex items-center gap-2 text-gray-400 mb-2 font-bold text-xs uppercase tracking-widest">
-                   <Scroll size={14} /> 历史上的今天
+              {insight.history && (
+                <div>
+                    <div className="flex items-center gap-2 text-gray-400 mb-2 font-bold text-xs uppercase tracking-widest">
+                    <Scroll size={14} /> 历史上的今天
+                    </div>
+                    <p className="text-sm text-gray-600 leading-relaxed">
+                    {insight.history}
+                    </p>
                 </div>
-                <p className="text-sm text-gray-600 leading-relaxed">
-                  {insight.history}
-                </p>
-              </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4 pt-2">
                 <div className="flex flex-col items-center p-3 bg-gray-50 rounded-lg border border-gray-100">

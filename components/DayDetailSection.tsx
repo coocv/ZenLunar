@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { CalendarDay, WeatherInfo, LocationData } from '../types';
 import { Flag, Sun, Cloud, CloudRain, CloudSnow, CloudLightning, CloudFog, Wind, Droplets, MapPin, PlusCircle, Trash2, Loader2, ArrowUp, ArrowDown, BookOpen, Sparkles, Star } from 'lucide-react';
@@ -471,9 +472,9 @@ export const DayDetailSection: React.FC<DayDetailSectionProps> = ({
 
           <div className="flex-1 w-full sm:w-auto text-center sm:text-right">
              {horoscopeTip ? (
-                <div className={`bg-white/60 backdrop-blur-sm p-4 rounded-xl border ${zodiac.theme.border} shadow-sm animate-in fade-in zoom-in-95`}>
-                   <p className={`${zodiac.theme.textMain} font-serif italic text-lg leading-relaxed`}>
-                      "{horoscopeTip}"
+                <div className={`bg-white/60 backdrop-blur-sm p-4 rounded-xl border ${zodiac.theme.border} shadow-sm animate-in fade-in zoom-in-95 text-left`}>
+                   <p className={`${zodiac.theme.textMain} font-serif text-base leading-relaxed whitespace-pre-line`}>
+                      {horoscopeTip}
                    </p>
                 </div>
              ) : (
