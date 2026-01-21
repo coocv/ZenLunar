@@ -111,6 +111,48 @@ function App() {
   
   const [theme, setTheme] = useState<AppTheme>(DEFAULT_THEME);
 
+  // === Dynamic Browser Tab (Title & Favicon) ===
+  useEffect(() => {
+    const month = currentDate.getMonth() + 1;
+    const date = currentDate.getDate();
+    const dayIndex = (currentDate.getDay() + 6) % 7;
+    const weekDay = WEEK_DAYS_CN[dayIndex];
+
+    // 1. Update Title
+    document.title = `${month}月${date}日 周${weekDay} • ZenLunar`;
+
+    // 2. Update Favicon with Dynamic Date
+    // We create a dynamic SVG string, inject the date, and set it as data URI
+    const svgIcon = `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+        <defs>
+          <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#6366f1"/>
+            <stop offset="100%" stop-color="#a855f7"/>
+          </linearGradient>
+        </defs>
+        <rect width="100" height="100" rx="26" fill="url(#grad)"/>
+        <rect x="20" y="24" width="60" height="56" rx="8" fill="white"/>
+        <rect x="20" y="24" width="60" height="18" rx="8" fill="#4f46e5" fill-opacity="0.1"/>
+        <circle cx="35" cy="20" r="5" fill="white" fill-opacity="0.9"/>
+        <circle cx="65" cy="20" r="5" fill="white" fill-opacity="0.9"/>
+        <text x="50" y="68" font-family="sans-serif" font-weight="bold" font-size="32" fill="#4f46e5" text-anchor="middle" dominant-baseline="middle">${date}</text>
+      </svg>
+    `.trim();
+
+    const encodedSvg = encodeURIComponent(svgIcon);
+    const dataUri = `data:image/svg+xml,${encodedSvg}`;
+
+    let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'icon';
+      document.head.appendChild(link);
+    }
+    link.href = dataUri;
+
+  }, [currentDate]);
+
   // Click Outside Handler to close dropdowns
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
