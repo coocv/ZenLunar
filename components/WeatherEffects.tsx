@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 
 interface WeatherEffectsProps {
@@ -216,25 +217,35 @@ export const WeatherEffects: React.FC<WeatherEffectsProps> = ({ season, enabled 
               {[...Array(config.autumn.count)].map((_, i) => {
                 const size = Math.random() * (config.autumn.sizeMax - config.autumn.sizeMin) + config.autumn.sizeMin;
                 const color = autumnColors[Math.floor(Math.random() * autumnColors.length)];
+                
+                // Randomize initial parameters for natural look
                 const isFlipped = Math.random() > 0.5;
-
+                const initialRotation = Math.floor(Math.random() * 360); // Random start angle
+                const animType = Math.random() > 0.5 ? 'animate-weather-fall-cw' : 'animate-weather-fall-ccw'; // Random spin direction
+                
                 return (
                   <div 
                     key={i}
-                    className="absolute animate-weather-fall-rotate"
+                    className={`absolute ${animType}`}
                     style={{
                       width: `${size}px`,
                       height: `${size}px`,
                       left: `${Math.random() * 100}%`,
                       top: '-10%',
                       color: color,
-                      animationDuration: `${10 + Math.random() * 10}s`,
-                      animationDelay: `${Math.random() * 8}s`,
+                      animationDuration: `${12 + Math.random() * 8}s`, // Slower fall for leaves
+                      animationDelay: `${Math.random() * 10}s`,
                       opacity: 0.9,
-                      transform: isFlipped ? 'scaleX(-1)' : 'none'
                     }}
                   >
-                     <svg viewBox="0 0 24 24" className="w-full h-full drop-shadow-sm filter overflow-visible">
+                     {/* Apply random initial rotation to inner SVG so keyframes don't override it, but add to it */}
+                     <svg 
+                        viewBox="0 0 24 24" 
+                        className="w-full h-full drop-shadow-sm filter overflow-visible"
+                        style={{ 
+                            transform: `rotate(${initialRotation}deg) ${isFlipped ? 'scaleX(-1)' : ''}`
+                        }}
+                     >
                         <g fill="currentColor">
                           <path d="M12 2C17 5 21 10 21 15C21 19 17 22.5 12 22.5C7 22.5 3 19 3 15C3 10 7 5 12 2Z" />
                           <path d="M12 22.5V5 M12 18L17 15 M12 14L18 11 M12 10L17 7 M12 18L7 15 M12 14L6 11 M12 10L7 7" 
@@ -308,12 +319,24 @@ export const WeatherEffects: React.FC<WeatherEffectsProps> = ({ season, enabled 
           100% { transform: translateY(110vh) translateX(0) rotate(-90deg); opacity: 0; }
         }
 
-        /* Rotation Fall (Autumn) */
-        @keyframes weather-fall-rotate {
-          0% { transform: translateY(-10vh) rotate(0deg) translateX(0); opacity: 0; }
+        /* Autumn Leaves: Clockwise Spin + Sway */
+        @keyframes weather-fall-cw {
+          0% { transform: translateY(-10vh) translateX(0) rotate(0deg); opacity: 0; }
           10% { opacity: 1; }
-          90% { opacity: 1; }
-          100% { transform: translateY(110vh) rotate(360deg) translateX(50px); opacity: 0; }
+          25% { transform: translateY(20vh) translateX(40px) rotate(45deg); }
+          50% { transform: translateY(50vh) translateX(-20px) rotate(120deg); }
+          75% { transform: translateY(80vh) translateX(30px) rotate(240deg); }
+          100% { transform: translateY(110vh) translateX(0) rotate(360deg); opacity: 0; }
+        }
+
+        /* Autumn Leaves: Counter-Clockwise Spin + Sway */
+        @keyframes weather-fall-ccw {
+          0% { transform: translateY(-10vh) translateX(0) rotate(0deg); opacity: 0; }
+          10% { opacity: 1; }
+          25% { transform: translateY(20vh) translateX(-40px) rotate(-45deg); }
+          50% { transform: translateY(50vh) translateX(20px) rotate(-120deg); }
+          75% { transform: translateY(80vh) translateX(-30px) rotate(-240deg); }
+          100% { transform: translateY(110vh) translateX(0) rotate(-360deg); opacity: 0; }
         }
 
         /* Summer Wind: Diagonal (Top-Right to Bottom-Left) */
@@ -363,8 +386,13 @@ export const WeatherEffects: React.FC<WeatherEffectsProps> = ({ season, enabled 
           animation-timing-function: linear;
           animation-iteration-count: infinite;
         }
-        .animate-weather-fall-rotate {
-          animation-name: weather-fall-rotate;
+        .animate-weather-fall-cw {
+          animation-name: weather-fall-cw;
+          animation-timing-function: linear;
+          animation-iteration-count: infinite;
+        }
+        .animate-weather-fall-ccw {
+          animation-name: weather-fall-ccw;
           animation-timing-function: linear;
           animation-iteration-count: infinite;
         }
