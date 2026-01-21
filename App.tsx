@@ -157,7 +157,7 @@ function App() {
         <rect x="20" y="24" width="60" height="18" rx="8" fill="#4f46e5" fill-opacity="0.1"/>
         <circle cx="35" cy="20" r="5" fill="white" fill-opacity="0.9"/>
         <circle cx="65" cy="20" r="5" fill="white" fill-opacity="0.9"/>
-        <text x="50" y="68" font-family="sans-serif" font-weight="bold" font-size="32" fill="#4f46e5" text-anchor="middle" dominant-baseline="middle">${date}</text>
+        <text x="50" y="62" font-family="sans-serif" font-weight="bold" font-size="32" fill="#4f46e5" text-anchor="middle" dominant-baseline="middle">${date}</text>
       </svg>
     `.trim();
 
