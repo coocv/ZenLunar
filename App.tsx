@@ -12,7 +12,7 @@ import { LocationSearchModal } from './components/LocationSearchModal';
 import { WorkCycleSettingModal } from './components/WorkCycleSettingModal';
 import { AnniversarySettingModal } from './components/AnniversarySettingModal';
 import { WEEK_DAYS, WEEK_DAYS_CN, DEFAULT_THEME, SEASONAL_THEMES } from './constants';
-import { CalendarDay, AppTheme, WeatherInfo, LocationData, WorkCycleConfig, Anniversary } from './types';
+import { CalendarDay, AppTheme, WeatherInfo, LocationData, WorkCycleConfig, Anniversary, AppBackupData } from './types';
 
 function App() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -90,17 +90,43 @@ function App() {
     } catch { return true; }
   });
 
+  // === Theme State with Persistence ===
+  const [isCustomTheme, setIsCustomTheme] = useState(() => {
+      return localStorage.getItem('zenlunar_is_custom_theme') === 'true';
+  });
+
+  const [theme, setTheme] = useState<AppTheme>(() => {
+      try {
+          if (localStorage.getItem('zenlunar_is_custom_theme') === 'true') {
+              const saved = localStorage.getItem('zenlunar_custom_theme_data');
+              if (saved) return JSON.parse(saved);
+          }
+      } catch (e) {}
+      return DEFAULT_THEME;
+  });
+
+  // Save animation pref
   useEffect(() => {
      localStorage.setItem('zenlunar_animation', String(isAnimationEnabled));
   }, [isAnimationEnabled]);
 
+  // Save work cycle
   useEffect(() => {
     localStorage.setItem('zenlunar_work_cycle', JSON.stringify(workCycleConfig));
   }, [workCycleConfig]);
 
+  // Save anniversaries
   useEffect(() => {
     localStorage.setItem('zenlunar_anniversaries', JSON.stringify(anniversaries));
   }, [anniversaries]);
+
+  // Save Theme Preferences
+  useEffect(() => {
+      localStorage.setItem('zenlunar_is_custom_theme', String(isCustomTheme));
+      if (isCustomTheme) {
+          localStorage.setItem('zenlunar_custom_theme_data', JSON.stringify(theme));
+      }
+  }, [theme, isCustomTheme]);
 
   // Modal State
   const [isInsightOpen, setIsInsightOpen] = useState(false);
@@ -108,8 +134,6 @@ function App() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isWorkCycleOpen, setIsWorkCycleOpen] = useState(false);
   const [isAnniversaryOpen, setIsAnniversaryOpen] = useState(false);
-  
-  const [theme, setTheme] = useState<AppTheme>(DEFAULT_THEME);
 
   // === Dynamic Browser Tab (Title & Favicon) ===
   useEffect(() => {
@@ -118,11 +142,8 @@ function App() {
     const dayIndex = (currentDate.getDay() + 6) % 7;
     const weekDay = WEEK_DAYS_CN[dayIndex];
 
-    // 1. Update Title
     document.title = `${month}月${date}日 周${weekDay} • ZenLunar`;
 
-    // 2. Update Favicon with Dynamic Date
-    // We create a dynamic SVG string, inject the date, and set it as data URI
     const svgIcon = `
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
         <defs>
@@ -153,7 +174,7 @@ function App() {
 
   }, [currentDate]);
 
-  // Click Outside Handler to close dropdowns
+  // Click Outside Handler
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (showYearPicker && yearDropdownRef.current && !yearDropdownRef.current.contains(event.target as Node)) {
@@ -163,17 +184,13 @@ function App() {
         setShowMonthPicker(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showYearPicker, showMonthPicker]);
   
-  // Auto-scroll year picker to current year
+  // Auto-scroll year picker
   useEffect(() => {
     if (showYearPicker && yearListRef.current) {
-        // Use a small timeout to ensure the DOM is fully painted and layout is calculated
         const timer = setTimeout(() => {
             if (!yearListRef.current) return;
             const activeItem = yearListRef.current.querySelector('[data-active="true"]') as HTMLElement;
@@ -186,8 +203,10 @@ function App() {
     }
   }, [showYearPicker]);
 
-  // Detect Season on Month Change
+  // Detect Season (Only if NOT custom theme)
   useEffect(() => {
+    if (isCustomTheme) return; // Skip if user set a custom theme
+
     const month = currentDate.getMonth() + 1; // 1-12
     let newTheme = DEFAULT_THEME;
 
@@ -202,8 +221,7 @@ function App() {
     }
     
     setTheme(newTheme);
-
-  }, [currentDate.getMonth()]);
+  }, [currentDate.getMonth(), isCustomTheme]);
 
   useEffect(() => {
     const newDays = getCalendarMonthDays(currentDate.getFullYear(), currentDate.getMonth());
@@ -392,6 +410,35 @@ function App() {
      localStorage.setItem('zenlunar_last_location', JSON.stringify(loc));
   };
 
+  // === Import Data Handler ===
+  const handleImportData = (data: AppBackupData) => {
+    if (!data) return;
+    if (window.confirm('确定要导入配置文件吗？这将覆盖当前的设置。')) {
+        if (data.workCycle) setWorkCycleConfig(data.workCycle);
+        if (data.anniversaries) setAnniversaries(data.anniversaries);
+        if (data.savedLocations) setSavedLocations(data.savedLocations);
+        
+        // Handle Theme
+        if (data.theme) setTheme(data.theme);
+        setIsCustomTheme(!!data.isCustomTheme);
+        setIsAnimationEnabled(!!data.isAnimationEnabled);
+        
+        alert('配置导入成功！');
+        setIsPanelOpen(false);
+    }
+  };
+
+  // Handle manual theme change from panel
+  const handleManualThemeChange = (newTheme: AppTheme) => {
+      setTheme(newTheme);
+      // If it's default theme, treat as "not custom" to allow seasons to take over again if needed
+      if (newTheme.name === DEFAULT_THEME.name) {
+          setIsCustomTheme(false);
+      } else {
+          setIsCustomTheme(true);
+      }
+  };
+
   const currentDayObject = days.find(d => 
     d.date.getDate() === currentDate.getDate() && 
     d.date.getMonth() === currentDate.getMonth() && 
@@ -406,6 +453,18 @@ function App() {
 
   const yearsRange = Array.from({ length: 201 }, (_, i) => 1900 + i);
   const monthsRange = Array.from({ length: 12 }, (_, i) => i);
+
+  // Prepare full config for export
+  const fullConfig: AppBackupData = {
+      version: 1,
+      timestamp: Date.now(),
+      workCycle: workCycleConfig,
+      anniversaries,
+      savedLocations,
+      theme,
+      isCustomTheme,
+      isAnimationEnabled
+  };
 
   return (
     <div className="min-h-screen text-text font-sans transition-colors duration-500 relative">
@@ -454,7 +513,7 @@ function App() {
                {workCycleConfig.cycleEnabled && <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full border border-white"></span>}
             </button>
 
-            {/* Exceptions/Adjustments Button (Separate) */}
+            {/* Exceptions/Adjustments Button */}
              <button
                onClick={() => {
                    setActiveSettingsMode('exception');
@@ -488,7 +547,7 @@ function App() {
         </div>
       </nav>
 
-      {/* Main Content - REMOVED 'relative z-10' to prevent stacking context trap for dropdowns */}
+      {/* Main Content */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 relative z-20">
         
         {/* Header Section */}
@@ -661,7 +720,7 @@ function App() {
           </div>
         </div>
         
-        {/* Detail Section with Weather */}
+        {/* Detail Section */}
         <DayDetailSection 
           day={currentDayObject} 
           currentLocation={currentLocation}
@@ -708,11 +767,13 @@ function App() {
       
       <CustomizationPanel 
         currentTheme={theme}
-        onThemeChange={setTheme}
+        onThemeChange={handleManualThemeChange}
         isOpen={isPanelOpen}
         onClose={() => setIsPanelOpen(false)}
         isAnimationEnabled={isAnimationEnabled}
         onToggleAnimation={setIsAnimationEnabled}
+        fullConfig={fullConfig}
+        onImport={handleImportData}
       />
 
     </div>

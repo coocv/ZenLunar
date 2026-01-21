@@ -73,3 +73,14 @@ export enum ViewMode {
   Month = 'month',
   Year = 'year'
 }
+
+export interface AppBackupData {
+  version: number;
+  timestamp: number;
+  workCycle: WorkCycleConfig;
+  anniversaries: Anniversary[];
+  savedLocations: LocationData[];
+  theme: AppTheme;
+  isCustomTheme: boolean;
+  isAnimationEnabled: boolean;
+}

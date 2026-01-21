@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { Palette, Wand2, Loader2, RefreshCw, Zap, ZapOff } from 'lucide-react';
-import { AppTheme } from '../types';
+
+import React, { useState, useRef } from 'react';
+import { Palette, Wand2, Loader2, RefreshCw, Zap, Download, Upload, Save } from 'lucide-react';
+import { AppTheme, AppBackupData } from '../types';
 import { generateTheme } from '../services/geminiService';
 import { DEFAULT_THEME } from '../constants';
 
@@ -11,6 +12,8 @@ interface CustomizationPanelProps {
   onClose: () => void;
   isAnimationEnabled: boolean;
   onToggleAnimation: (enabled: boolean) => void;
+  fullConfig: AppBackupData;
+  onImport: (data: AppBackupData) => void;
 }
 
 export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({ 
@@ -19,10 +22,13 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
   isOpen,
   onClose,
   isAnimationEnabled,
-  onToggleAnimation
+  onToggleAnimation,
+  fullConfig,
+  onImport
 }) => {
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
@@ -37,6 +43,39 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
   const handleReset = () => {
     onThemeChange(DEFAULT_THEME);
     setPrompt('');
+  };
+
+  const handleExport = () => {
+      const dataStr = JSON.stringify(fullConfig, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `zenlunar_config_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+          try {
+              const json = JSON.parse(event.target?.result as string);
+              if (json) {
+                  onImport(json);
+              }
+          } catch (err) {
+              alert('配置文件格式错误');
+          }
+      };
+      reader.readAsText(file);
+      // Reset input value to allow re-importing same file if needed
+      e.target.value = '';
   };
 
   return (
@@ -84,6 +123,39 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
 
           <div className="h-px bg-gray-100 w-full"></div>
 
+          {/* Data Management */}
+          <div>
+             <h4 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+               <Save size={16} className="text-primary" /> 配置备份与恢复
+             </h4>
+             <div className="grid grid-cols-2 gap-3">
+                <button 
+                   onClick={handleExport}
+                   className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gray-50 text-gray-700 font-medium text-sm border border-gray-200 hover:bg-gray-100 hover:border-gray-300 transition-all"
+                >
+                   <Download size={16} /> 导出配置
+                </button>
+                <button 
+                   onClick={() => fileInputRef.current?.click()}
+                   className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gray-50 text-gray-700 font-medium text-sm border border-gray-200 hover:bg-gray-100 hover:border-gray-300 transition-all"
+                >
+                   <Upload size={16} /> 导入配置
+                </button>
+                <input 
+                   type="file" 
+                   ref={fileInputRef} 
+                   className="hidden" 
+                   accept=".json" 
+                   onChange={handleFileChange}
+                />
+             </div>
+             <p className="text-[10px] text-gray-400 mt-2 leading-relaxed">
+                包含：纪念日、工作制设置、已保存城市、当前主题与偏好。
+             </p>
+          </div>
+
+          <div className="h-px bg-gray-100 w-full"></div>
+
           {/* AI Theme Generation */}
           <div>
             <label className="block text-sm font-bold text-gray-800 mb-2">
@@ -127,7 +199,7 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
               className="mt-4 w-full py-2 border border-gray-200 text-gray-600 rounded-lg flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors text-sm"
             >
               <RefreshCw size={14} />
-              恢复默认
+              恢复默认 (自动季节)
             </button>
           </div>
         </div>
