@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { X, Search, MapPin, Loader2, Plus } from 'lucide-react';
 import { LocationData } from '../types';
@@ -13,10 +14,9 @@ export const LocationSearchModal: React.FC<LocationSearchModalProps> = ({ onClos
   const [results, setResults] = useState<LocationData[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Auto-search when query changes with debounce
   useEffect(() => {
     const timeOutId = setTimeout(async () => {
-      if (query.trim().length >= 1) { // Allow single character search
+      if (query.trim().length >= 1) {
         setLoading(true);
         try {
            const cities = await searchCity(query);
@@ -29,7 +29,7 @@ export const LocationSearchModal: React.FC<LocationSearchModalProps> = ({ onClos
       } else {
         setResults([]);
       }
-    }, 800); // 800ms debounce for Nominatim
+    }, 800);
 
     return () => clearTimeout(timeOutId);
   }, [query]);
@@ -51,10 +51,12 @@ export const LocationSearchModal: React.FC<LocationSearchModalProps> = ({ onClos
 
         <div className="p-4">
           <div className="relative mb-4">
+             {/* Use appearance-none and rounded properties to fix iOS default input styling */}
              <input 
                type="text" 
-               placeholder="输入城市或区县名称 (如: 浦东, 义乌)..." 
-               className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/50 bg-gray-50 transition-all"
+               inputMode="search"
+               placeholder="输入城市或区县名称..." 
+               className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/50 bg-gray-50 transition-all appearance-none"
                value={query}
                onChange={(e) => setQuery(e.target.value)}
                autoFocus
@@ -65,7 +67,8 @@ export const LocationSearchModal: React.FC<LocationSearchModalProps> = ({ onClos
              </div>
           </div>
 
-          <div className="space-y-2 max-h-[300px] overflow-y-auto">
+          {/* Webkit scroll physics for iOS */}
+          <div className="space-y-2 max-h-[300px] overflow-y-auto scrollbar-thin" style={{ WebkitOverflowScrolling: 'touch' }}>
             {results.length === 0 && !loading && query.length > 1 && (
                <p className="text-center text-gray-400 text-sm py-4">未找到相关城市</p>
             )}
@@ -80,12 +83,12 @@ export const LocationSearchModal: React.FC<LocationSearchModalProps> = ({ onClos
                 className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 border border-transparent hover:border-gray-100 transition-all text-left group"
               >
                 <div className="flex items-center gap-3 w-full">
-                   <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-100 group-hover:text-blue-600">
+                   <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center flex-shrink-0">
                       <MapPin size={16} />
                    </div>
                    <div className="flex-1 min-w-0">
                      <div className="font-bold text-gray-800 text-sm whitespace-normal leading-tight">{city.name}</div>
-                     <div className="text-xs text-gray-400 mt-0.5">Lat: {city.lat.toFixed(2)}, Lon: {city.lon.toFixed(2)}</div>
+                     <div className="text-xs text-gray-400 mt-0.5">坐标: {city.lat.toFixed(2)}, {city.lon.toFixed(2)}</div>
                    </div>
                    <Plus size={18} className="text-gray-300 group-hover:text-primary flex-shrink-0" />
                 </div>
@@ -95,7 +98,7 @@ export const LocationSearchModal: React.FC<LocationSearchModalProps> = ({ onClos
             {results.length === 0 && !query && (
                 <div className="text-center text-gray-400 text-sm py-8 flex flex-col items-center">
                     <Search size={32} className="mb-2 opacity-20" />
-                    请输入城市名称进行搜索
+                    请输入城市名称
                 </div>
             )}
           </div>
