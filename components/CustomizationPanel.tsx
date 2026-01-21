@@ -1,8 +1,7 @@
 
-import React, { useState, useRef } from 'react';
-import { Palette, Wand2, Loader2, RefreshCw, Zap, Download, Upload, Save } from 'lucide-react';
+import React, { useRef } from 'react';
+import { Palette, RefreshCw, Zap, Download, Upload, Save } from 'lucide-react';
 import { AppTheme, AppBackupData } from '../types';
-import { generateTheme } from '../services/geminiService';
 import { DEFAULT_THEME } from '../constants';
 
 interface CustomizationPanelProps {
@@ -26,23 +25,10 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
   fullConfig,
   onImport
 }) => {
-  const [prompt, setPrompt] = useState('');
-  const [loading, setLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleGenerate = async () => {
-    if (!prompt.trim()) return;
-    setLoading(true);
-    const theme = await generateTheme(prompt);
-    if (theme) {
-      onThemeChange(theme);
-    }
-    setLoading(false);
-  };
 
   const handleReset = () => {
     onThemeChange(DEFAULT_THEME);
-    setPrompt('');
   };
 
   const handleExport = () => {
@@ -153,34 +139,6 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
                 包含：纪念日、工作制设置、已保存城市、当前主题与偏好。
              </p>
           </div>
-
-          <div className="h-px bg-gray-100 w-full"></div>
-
-          {/* AI Theme Generation */}
-          <div>
-            <label className="block text-sm font-bold text-gray-800 mb-2">
-              AI 主题生成
-            </label>
-            <p className="text-xs text-gray-500 mb-3">
-              描述您想要的心情、季节或风格 (例如：“水墨山水”、“赛博朋克”、“极简禅意”)。
-            </p>
-            <textarea
-              className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm resize-none"
-              rows={3}
-              placeholder="输入您的主题灵感..."
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-            />
-          </div>
-
-          <button
-            onClick={handleGenerate}
-            disabled={loading || !prompt.trim()}
-            className="w-full py-3 bg-black text-white rounded-lg flex items-center justify-center gap-2 hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
-          >
-            {loading ? <Loader2 className="animate-spin" size={18} /> : <Wand2 size={18} />}
-            生成主题
-          </button>
 
           <div className="border-t border-gray-100 pt-6">
             <h4 className="text-sm font-medium text-gray-700 mb-3">当前主题</h4>
