@@ -69,20 +69,21 @@ export const DayCell: React.FC<DayCellProps> = ({ day, isSelected, onClick, work
   // Dynamic styles
   const opacityClass = day.isCurrentMonth ? 'opacity-100' : 'opacity-30';
   
-  // Base classes
+  // Base classes (removed default 'border' here to handle it specifically below)
   let containerClasses = `
-    relative h-24 sm:h-32 border rounded-lg p-2 flex flex-col justify-between 
+    relative h-24 sm:h-32 rounded-lg p-2 flex flex-col justify-between 
     cursor-pointer transition-all duration-200 
     ${opacityClass}
   `;
 
   // Selection & Today logic (Container styling)
   if (isSelected) {
-    containerClasses += ' ring-2 ring-primary ring-offset-2 bg-secondary/20 border-transparent z-20 shadow-[0_0_12px_var(--color-primary)]';
+    // Changed: Use border-2 instead of ring to make it stick to the box
+    containerClasses += ' border-2 border-primary bg-secondary/20 z-20 shadow-[0_0_12px_var(--color-primary)]';
   } else if (day.isToday) {
-    containerClasses += ' border-primary/50 bg-surface shadow-sm hover:shadow-md z-10';
+    containerClasses += ' border border-primary/50 bg-surface shadow-sm hover:shadow-md z-10';
   } else {
-    containerClasses += ' border-gray-100 hover:bg-gray-50 bg-surface hover:shadow-md';
+    containerClasses += ' border border-gray-100 hover:bg-gray-50 bg-surface hover:shadow-md';
   }
   
   // Text Color Logic:
