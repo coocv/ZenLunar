@@ -26,7 +26,9 @@ export const DayCell: React.FC<DayCellProps> = ({ day, isSelected, onClick, work
 
   // Selection & Today logic
   if (isSelected) {
-    containerClasses += ' ring-2 ring-primary ring-offset-2 bg-secondary/20 border-primary z-20';
+    // Added shadow-[0_0_12px_var(--color-primary)] for the outer glow effect requested by user
+    // Kept ring-2 for the solid definition, removed inner border-primary (transparent)
+    containerClasses += ' ring-2 ring-primary ring-offset-2 bg-secondary/20 border-transparent z-20 shadow-[0_0_12px_var(--color-primary)]';
   } else if (day.isToday) {
     containerClasses += ' border-primary/50 bg-surface shadow-sm hover:shadow-md z-10';
   } else {
@@ -64,13 +66,13 @@ export const DayCell: React.FC<DayCellProps> = ({ day, isSelected, onClick, work
         // Exception exists: Override everything
         if (exception === 'work') {
              workCycleBadge = (
-              <span className="absolute top-1 left-1 bg-orange-100 text-orange-600 text-[10px] px-1 rounded font-bold border border-orange-200">
+              <span className="bg-orange-100 text-orange-600 text-[10px] px-1 rounded font-bold border border-orange-200">
                   班
               </span>
             );
         } else {
              workCycleBadge = (
-              <span className="absolute top-1 left-1 bg-green-100 text-green-600 text-[10px] px-1 rounded font-bold border border-green-200">
+              <span className="bg-green-100 text-green-600 text-[10px] px-1 rounded font-bold border border-green-200">
                   休
               </span>
             );
@@ -79,7 +81,7 @@ export const DayCell: React.FC<DayCellProps> = ({ day, isSelected, onClick, work
     // 2. Priority: Statutory Holidays (If no exception)
     else if (isStatutoryHoliday) {
         workCycleBadge = (
-            <span className="absolute top-1 left-1 bg-green-100 text-green-600 text-[10px] px-1 rounded font-bold border border-green-200">
+            <span className="bg-green-100 text-green-600 text-[10px] px-1 rounded font-bold border border-green-200">
                 休
             </span>
         );
@@ -92,13 +94,13 @@ export const DayCell: React.FC<DayCellProps> = ({ day, isSelected, onClick, work
         if (workCycle.cycleMode === 'single') {
             if (dayOfWeek === 6) {
                  workCycleBadge = (
-                    <span className="absolute top-1 left-1 bg-orange-100 text-orange-600 text-[10px] px-1 rounded font-bold border border-orange-200">
+                    <span className="bg-orange-100 text-orange-600 text-[10px] px-1 rounded font-bold border border-orange-200">
                         班
                     </span>
                 );
             } else if (dayOfWeek === 0) {
                  workCycleBadge = (
-                    <span className="absolute top-1 left-1 bg-green-100 text-green-600 text-[10px] px-1 rounded font-bold border border-green-200">
+                    <span className="bg-green-100 text-green-600 text-[10px] px-1 rounded font-bold border border-green-200">
                         休
                     </span>
                 );
@@ -132,13 +134,13 @@ export const DayCell: React.FC<DayCellProps> = ({ day, isSelected, onClick, work
 
                 if (isWorkDay) {
                     workCycleBadge = (
-                        <span className="absolute top-1 left-1 bg-orange-100 text-orange-600 text-[10px] px-1 rounded font-bold border border-orange-200">
+                        <span className="bg-orange-100 text-orange-600 text-[10px] px-1 rounded font-bold border border-orange-200">
                             班
                         </span>
                     );
                 } else {
                     workCycleBadge = (
-                        <span className="absolute top-1 left-1 bg-green-100 text-green-600 text-[10px] px-1 rounded font-bold border border-green-200">
+                        <span className="bg-green-100 text-green-600 text-[10px] px-1 rounded font-bold border border-green-200">
                             休
                         </span>
                     );
@@ -146,7 +148,7 @@ export const DayCell: React.FC<DayCellProps> = ({ day, isSelected, onClick, work
             } else if (dayOfWeek === 0) {
                 // Sunday always rest in Alternating
                 workCycleBadge = (
-                    <span className="absolute top-1 left-1 bg-green-100 text-green-600 text-[10px] px-1 rounded font-bold border border-green-200">
+                    <span className="bg-green-100 text-green-600 text-[10px] px-1 rounded font-bold border border-green-200">
                         休
                     </span>
                 );
@@ -160,14 +162,14 @@ export const DayCell: React.FC<DayCellProps> = ({ day, isSelected, onClick, work
       onClick={() => onClick(day)}
       className={containerClasses}
     >
-      <div className="flex justify-between items-start">
-        {workCycleBadge}
-        <div className={`flex items-center gap-1 ${workCycleBadge ? 'ml-auto' : ''}`}>
+      <div className="flex justify-between items-center w-full">
+        <div className="flex items-center gap-1">
            <span className={`text-lg sm:text-xl font-medium ${day.isToday ? 'text-primary font-bold' : textColor}`}>
              {day.date.getDate()}
            </span>
            {day.isToday && <span className="text-[10px] font-bold text-white bg-primary px-1.5 py-0.5 rounded-full">今</span>}
         </div>
+        {workCycleBadge}
       </div>
 
       <div className="flex flex-col items-end gap-1 overflow-hidden w-full">
@@ -178,9 +180,9 @@ export const DayCell: React.FC<DayCellProps> = ({ day, isSelected, onClick, work
             </span>
         ))}
 
-        {/* Festivals highlight */}
+        {/* Festivals highlight - Updated: font-serif, no bold, text-primary */}
         {day.festivals.map((fest, idx) => (
-          <span key={idx} className="text-[10px] sm:text-xs bg-accent text-white px-1 rounded truncate w-full text-right">
+          <span key={idx} className="text-[10px] sm:text-xs text-primary font-serif truncate w-full text-right">
             {fest}
           </span>
         ))}
