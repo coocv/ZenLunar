@@ -1,6 +1,9 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, Settings, Calendar as CalendarIcon, Sparkles, RotateCcw, MapPin, Navigation, ChevronDown, Briefcase, CalendarClock, Heart } from 'lucide-react';
+import { 
+  ChevronLeft, ChevronRight, Settings, Calendar as CalendarIcon, 
+  Sparkles, RotateCcw, MapPin, Navigation, ChevronDown, 
+  Briefcase, CalendarClock, Heart, LocateFixed, Loader2 
+} from 'lucide-react';
 import { getCalendarMonthDays, formatDateFull } from './utils/calendarLogic';
 import { getUserLocation, fetchWeather, getCityNameFromCoords } from './utils/weatherUtils';
 import { DayCell } from './components/DayCell';
@@ -25,6 +28,7 @@ function App() {
   const monthDropdownRef = useRef<HTMLDivElement>(null);
   const yearListRef = useRef<HTMLDivElement>(null);
   
+  const [isLocating, setIsLocating] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
   const [savedLocations, setSavedLocations] = useState<LocationData[]>(() => {
     try {
@@ -98,14 +102,13 @@ function App() {
 
     document.title = `${month}月${date}日 周${weekDay} • ZenLunar`;
 
-    const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#a855f7"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#g)"/><rect x="20" y="24" width="60" height="56" rx="8" fill="white"/><circle cx="35" cy="20" r="5" fill="white" fill-opacity="0.9"/><circle cx="65" cy="20" r="5" fill="white" fill-opacity="0.9"/><text x="50" y="62" font-family="sans-serif" font-weight="bold" font-size="32" fill="#4f46e5" text-anchor="middle" dominant-baseline="middle">${date}</text></svg>`;
+    // High compatibility Base64 Favicon for Safari/iOS
+    const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="${theme.colors.primary}"/><stop offset="100%" stop-color="${theme.colors.accent}"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#g)"/><rect x="20" y="24" width="60" height="56" rx="8" fill="white"/><circle cx="35" cy="20" r="5" fill="white" fill-opacity="0.9"/><circle cx="65" cy="20" r="5" fill="white" fill-opacity="0.9"/><text x="50" y="62" font-family="sans-serif" font-weight="bold" font-size="32" fill="${theme.colors.primary}" text-anchor="middle" dominant-baseline="middle">${date}</text></svg>`;
 
-    // Safari handles base64 better for dynamic icons
     const base64Svg = btoa(unescape(encodeURIComponent(svgIcon)));
     const dataUri = `data:image/svg+xml;base64,${base64Svg}`;
 
     const updateFavicon = () => {
-      // Remove all existing icons to force Safari to refresh
       const existingIcons = document.querySelectorAll("link[rel*='icon']");
       existingIcons.forEach(el => el.remove());
 
@@ -117,7 +120,7 @@ function App() {
     };
 
     updateFavicon();
-  }, [currentDate]);
+  }, [currentDate, theme.colors.primary, theme.colors.accent]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -171,6 +174,8 @@ function App() {
   }, []);
 
   const handleBackToGPS = async () => {
+     setIsLocating(true);
+     setLocationError(false);
      try {
         const { lat, lon } = await getUserLocation();
         const cityName = await getCityNameFromCoords(lat, lon);
@@ -179,8 +184,12 @@ function App() {
         setCurrentLocation(newLoc);
         const data = await fetchWeather(lat, lon);
         setWeatherMap(data);
-        setLocationError(false);
-     } catch (e) { setLocationError(true); }
+     } catch (e) { 
+        setLocationError(true); 
+        console.error("Locating failed", e);
+     } finally {
+        setIsLocating(false);
+     }
   };
 
   useEffect(() => { localStorage.setItem('zenlunar_saved_locations', JSON.stringify(savedLocations)); }, [savedLocations]);
@@ -246,6 +255,25 @@ function App() {
     } else { setSavedLocations(prev => [...prev, loc]); }
   };
 
+  const removeLocation = (id: string) => {
+    setSavedLocations(prev => prev.filter(loc => loc.id !== id));
+    if (currentLocation?.id === id) {
+      handleBackToGPS();
+    }
+  };
+
+  const handleLocationSwitch = async (loc: LocationData) => {
+    localStorage.setItem('zenlunar_last_location', JSON.stringify(loc));
+    setCurrentLocation(loc);
+    const data = await fetchWeather(loc.lat, loc.lon);
+    setWeatherMap(data);
+  };
+
+  const handleManualThemeChange = (newTheme: AppTheme) => {
+    setTheme(newTheme);
+    setIsCustomTheme(true);
+  };
+
   const handleImportData = (data: AppBackupData) => {
     if (!data) return;
     if (window.confirm('确定导入配置吗？这将覆盖当前设置。')) {
@@ -259,29 +287,6 @@ function App() {
     }
   };
 
-  // Fix: Added missing location removal logic
-  const removeLocation = (id: string) => {
-    setSavedLocations(prev => prev.filter(loc => loc.id !== id));
-    if (currentLocation?.id === id) {
-      handleBackToGPS();
-    }
-  };
-
-  // Fix: Added logic to switch between saved locations
-  const handleLocationSwitch = async (loc: LocationData) => {
-    localStorage.setItem('zenlunar_last_location', JSON.stringify(loc));
-    setCurrentLocation(loc);
-    const data = await fetchWeather(loc.lat, loc.lon);
-    setWeatherMap(data);
-  };
-
-  // Fix: Added logic to handle user-initiated theme changes
-  const handleManualThemeChange = (newTheme: AppTheme) => {
-    setTheme(newTheme);
-    setIsCustomTheme(true);
-  };
-
-  // Fix: Defined full configuration object for backups
   const fullConfig: AppBackupData = {
     version: 1,
     timestamp: Date.now(),
@@ -295,7 +300,8 @@ function App() {
 
   const currentDayObject = days.find(d => d.date.toDateString() === currentDate.toDateString()) || null;
   const isTodaySelected = new Date().toDateString() === currentDate.toDateString();
-  const dateKey = new Date(currentDate.getTime() - currentDate.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+  const offset = currentDate.getTimezoneOffset() * 60000;
+  const dateKey = new Date(currentDate.getTime() - offset).toISOString().split('T')[0];
   const selectedWeather = weatherMap[dateKey] || null;
 
   return (
@@ -311,11 +317,22 @@ function App() {
               ZenLunar <span className="text-primary transition-colors duration-500">禅历</span>
             </h1>
           </div>
-          <div className="flex items-center gap-2">
-            {locationError && <span className="text-xs text-red-400 flex items-center gap-1"><MapPin size={12} /> 定位失败</span>}
-            {currentLocation && !currentLocation.isCurrent && (
-                <button onClick={handleBackToGPS} className="p-2 hover:bg-gray-100 rounded-full text-primary transition-colors" title="回到定位位置"><Navigation size={20} /></button>
+          <div className="flex items-center gap-1 sm:gap-2">
+            {locationError && (
+              <div className="flex items-center gap-1 px-2 py-1 bg-red-50 text-red-500 text-[10px] rounded-lg border border-red-100 animate-in fade-in zoom-in">
+                <MapPin size={10} /> <span>无定位权限</span>
+              </div>
             )}
+            
+            <button 
+              onClick={handleBackToGPS} 
+              disabled={isLocating}
+              className={`p-2 hover:bg-gray-100 rounded-full transition-all ${isLocating ? 'text-primary' : 'text-gray-600'}`} 
+              title="刷新当前位置"
+            >
+              {isLocating ? <Loader2 size={22} className="animate-spin" /> : <LocateFixed size={22} />}
+            </button>
+
             <button onClick={() => { setActiveSettingsMode('cycle'); setIsWorkCycleOpen(true); }} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-600 relative" title="工作循环">
                <Briefcase size={22} />
                {workCycleConfig.cycleEnabled && <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full border border-white"></span>}
@@ -406,13 +423,31 @@ function App() {
             ))}
           </div>
         </div>
-        <DayDetailSection day={currentDayObject} currentLocation={currentLocation} weather={selectedWeather} onAddLocationClick={() => setIsSearchOpen(true)} savedLocations={savedLocations} savedLocationsWeather={savedLocationsWeather} onRemoveLocation={removeLocation} onSelectLocation={handleLocationSwitch} />
+        <DayDetailSection 
+          day={currentDayObject} 
+          currentLocation={currentLocation} 
+          weather={selectedWeather} 
+          onAddLocationClick={() => setIsSearchOpen(true)} 
+          savedLocations={savedLocations} 
+          savedLocationsWeather={savedLocationsWeather} 
+          onRemoveLocation={removeLocation} 
+          onSelectLocation={handleLocationSwitch} 
+        />
       </main>
       {isInsightOpen && <div className="fixed inset-0 z-[70]"><InsightModal day={currentDayObject} onClose={() => setIsInsightOpen(false)} /></div>}
       {isSearchOpen && <LocationSearchModal onClose={() => setIsSearchOpen(false)} onAddLocation={addLocation} />}
       {isWorkCycleOpen && <WorkCycleSettingModal config={workCycleConfig} mode={activeSettingsMode} onSave={setWorkCycleConfig} onClose={() => setIsWorkCycleOpen(false)} />}
       {isAnniversaryOpen && <AnniversarySettingModal anniversaries={anniversaries} onSave={setAnniversaries} onClose={() => setIsAnniversaryOpen(false)} />}
-      <CustomizationPanel currentTheme={theme} onThemeChange={handleManualThemeChange} isOpen={isPanelOpen} onClose={() => setIsPanelOpen(false)} isAnimationEnabled={isAnimationEnabled} onToggleAnimation={setIsAnimationEnabled} fullConfig={{...fullConfig, theme, isCustomTheme, isAnimationEnabled}} onImport={handleImportData} />
+      <CustomizationPanel 
+        currentTheme={theme} 
+        onThemeChange={handleManualThemeChange} 
+        isOpen={isPanelOpen} 
+        onClose={() => setIsPanelOpen(false)} 
+        isAnimationEnabled={isAnimationEnabled} 
+        onToggleAnimation={setIsAnimationEnabled} 
+        fullConfig={fullConfig} 
+        onImport={handleImportData} 
+      />
     </div>
   );
 }
