@@ -51,14 +51,15 @@
 ```bash
 git clone https://github.com/your-username/zenlunar-calendar.git
 cd zenlunar-calendar
+```
 
-# Run and deploy your AI Studio app
+### 2. Run and deploy your AI Studio app
 
 This contains everything you need to run your app locally.
 
 View your app in AI Studio: https://ai.studio/apps/drive/1KvM9vp13IOr9zX0QAeOGcEMyAVHDtWJc
 
-### Run Locally
+### 3. Run Locally
 
 **Prerequisites:**  Node.js
 
