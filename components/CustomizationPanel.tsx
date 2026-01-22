@@ -109,6 +109,30 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
 
           <div className="h-px bg-gray-100 w-full"></div>
 
+          {/* Current Theme Color */}
+          <div>
+            <h4 className="text-sm font-medium text-gray-700 mb-3">当前主题色</h4>
+            <div className="p-4 rounded-lg border border-gray-200 shadow-sm" style={{ backgroundColor: currentTheme.colors.background }}>
+              <div className="font-bold mb-2" style={{ color: currentTheme.colors.text }}>{currentTheme.name}</div>
+              <div className="flex gap-2">
+                 <div className="w-8 h-8 rounded-full shadow-sm ring-1 ring-black/5" style={{ backgroundColor: currentTheme.colors.primary }} title="Primary"></div>
+                 <div className="w-8 h-8 rounded-full shadow-sm ring-1 ring-black/5" style={{ backgroundColor: currentTheme.colors.secondary }} title="Secondary"></div>
+                 <div className="w-8 h-8 rounded-full shadow-sm ring-1 ring-black/5" style={{ backgroundColor: currentTheme.colors.accent }} title="Accent"></div>
+                 <div className="w-8 h-8 rounded-full shadow-sm border border-gray-200" style={{ backgroundColor: currentTheme.colors.surface }} title="Surface"></div>
+              </div>
+            </div>
+            
+             <button
+              onClick={handleReset}
+              className="mt-4 w-full py-2 border border-gray-200 text-gray-600 rounded-lg flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors text-sm"
+            >
+              <RefreshCw size={14} />
+              恢复默认 (自动季节)
+            </button>
+          </div>
+
+          <div className="h-px bg-gray-100 w-full"></div>
+
           {/* Data Management */}
           <div>
              <h4 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
@@ -140,26 +164,6 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
              </p>
           </div>
 
-          <div className="border-t border-gray-100 pt-6">
-            <h4 className="text-sm font-medium text-gray-700 mb-3">当前主题</h4>
-            <div className="p-4 rounded-lg border border-gray-200 shadow-sm" style={{ backgroundColor: currentTheme.colors.background }}>
-              <div className="font-bold mb-2" style={{ color: currentTheme.colors.text }}>{currentTheme.name}</div>
-              <div className="flex gap-2">
-                 <div className="w-8 h-8 rounded-full shadow-sm ring-1 ring-black/5" style={{ backgroundColor: currentTheme.colors.primary }} title="Primary"></div>
-                 <div className="w-8 h-8 rounded-full shadow-sm ring-1 ring-black/5" style={{ backgroundColor: currentTheme.colors.secondary }} title="Secondary"></div>
-                 <div className="w-8 h-8 rounded-full shadow-sm ring-1 ring-black/5" style={{ backgroundColor: currentTheme.colors.accent }} title="Accent"></div>
-                 <div className="w-8 h-8 rounded-full shadow-sm border border-gray-200" style={{ backgroundColor: currentTheme.colors.surface }} title="Surface"></div>
-              </div>
-            </div>
-            
-             <button
-              onClick={handleReset}
-              className="mt-4 w-full py-2 border border-gray-200 text-gray-600 rounded-lg flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors text-sm"
-            >
-              <RefreshCw size={14} />
-              恢复默认 (自动季节)
-            </button>
-          </div>
         </div>
       </div>
     </div>
