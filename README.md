@@ -53,22 +53,68 @@ git clone https://github.com/your-username/zenlunar-calendar.git
 cd zenlunar-calendar
 ```
 
-### 2. Run and deploy your AI Studio app
+### 2. 安装依赖
+确保您的环境已安装 Node.js (推荐 v18+)。
+```Bash
+npm install
+```
+### 3. 配置环境变量
+在项目根目录创建一个 .env 文件，并添加您的 Google Gemini API Key（用于 AI 功能）：
+```
+Env 必须配置，否则 AI 功能将回退到本地离线模式
+API_KEY=your_google_gemini_api_key_here
+```
+💡 提示: 您可以在 Google AI Studio 免费获取 API Key。
+
+### 4. 启动开发服务器
+```Bash
+npm run dev
+```
+打开浏览器访问 http://localhost:5173 即可看到应用。
+#### 📖 使用指南
+切换日期: 点击日历顶部的年份或月份可快速跳转；点击“回今天”返回当前日期。
+查看详情: 点击任意日期，下方会展开详细信息（天气、宜忌、星座）。
+#### AI 揭示: 点击右上角的“揭示运势”按钮，触发 AI 生成当日运势卡片。
+侧边栏: 鼠标移至屏幕右侧边缘，点击悬浮的“日程”或“小计”按钮展开侧边栏。
+#### 设置面板: 点击顶部导航栏的齿轮图标 ⚙️，可以：
+开关背景动态特效。
+导出/导入所有配置数据（用于备份）。
+使用 AI 生成新主题。
+#### 排班设置: 点击顶部公文包图标 💼 设置大小周；点击日历时钟图标 📆 设置特定日期的调休。
+### 📂 项目结构
+```
+src/
+├── components/        # React 组件 (日历格、侧边栏、模态框等)
+├── services/          # API 服务 (Gemini AI 调用)
+├── utils/             # 工具函数 (农历计算、天气获取)
+├── types.ts           # TypeScript 类型定义
+├── constants.ts       # 常量数据 (节日数据、默认主题)
+├── App.tsx            # 主应用入口
+└── index.tsx          # 挂载点
+```
+### 🤝 贡献
+
+欢迎提交 Issue 或 Pull Request！
+
+### Fork 本仓库
+
+创建你的特性分支 (git checkout -b feature/AmazingFeature)
+
+提交你的修改 (git commit -m 'Add some AmazingFeature')
+
+推送到分支 (git push origin feature/AmazingFeature)
+
+开启一个 Pull Request
+
+### 📄 许可证
+本项目基于 MIT License 开源。
+
+
+### Run and deploy your AI Studio app
 
 This contains everything you need to run your app locally.
 
 View your app in AI Studio: https://ai.studio/apps/drive/1KvM9vp13IOr9zX0QAeOGcEMyAVHDtWJc
-
-### 3. Run Locally
-
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
 
 <div align="center">
 <img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
