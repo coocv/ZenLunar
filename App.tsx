@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   ChevronLeft, ChevronRight, Settings, Calendar as CalendarIcon, 
   Sparkles, RotateCcw, MapPin, Navigation, ChevronDown, 
-  Briefcase, CalendarClock, Heart, LocateFixed, Loader2 
+  Briefcase, CalendarClock, Heart, Loader2 
 } from 'lucide-react';
 import { getCalendarMonthDays, formatDateFull } from './utils/calendarLogic';
 import { getUserLocation, fetchWeather, getCityNameFromCoords } from './utils/weatherUtils';
@@ -28,7 +29,8 @@ function App() {
   const monthDropdownRef = useRef<HTMLDivElement>(null);
   const yearListRef = useRef<HTMLDivElement>(null);
   
-  const [isLocating, setIsLocating] = useState(false);
+  // Start with true to show loading state immediately instead of error state
+  const [isLocating, setIsLocating] = useState(true);
   const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
   const [savedLocations, setSavedLocations] = useState<LocationData[]>(() => {
     try {
@@ -167,6 +169,7 @@ function App() {
            const data = await fetchWeather(activeLoc.lat, activeLoc.lon);
            setWeatherMap(data);
            setLocationError(false);
+           setIsLocating(false); // Stop loading if cache is valid
         } else { handleBackToGPS(); }
       } catch (e) { handleBackToGPS(); }
     };
@@ -324,15 +327,6 @@ function App() {
               </div>
             )}
             
-            <button 
-              onClick={handleBackToGPS} 
-              disabled={isLocating}
-              className={`p-2 hover:bg-gray-100 rounded-full transition-all ${isLocating ? 'text-primary' : 'text-gray-600'}`} 
-              title="刷新当前位置"
-            >
-              {isLocating ? <Loader2 size={22} className="animate-spin" /> : <LocateFixed size={22} />}
-            </button>
-
             <button onClick={() => { setActiveSettingsMode('cycle'); setIsWorkCycleOpen(true); }} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-600 relative" title="工作循环">
                <Briefcase size={22} />
                {workCycleConfig.cycleEnabled && <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full border border-white"></span>}
@@ -431,7 +425,10 @@ function App() {
           savedLocations={savedLocations} 
           savedLocationsWeather={savedLocationsWeather} 
           onRemoveLocation={removeLocation} 
-          onSelectLocation={handleLocationSwitch} 
+          onSelectLocation={handleLocationSwitch}
+          onRefreshLocation={handleBackToGPS}
+          isLocating={isLocating}
+          locationError={locationError}
         />
       </main>
       {isInsightOpen && <div className="fixed inset-0 z-[70]"><InsightModal day={currentDayObject} onClose={() => setIsInsightOpen(false)} /></div>}

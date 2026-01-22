@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { CalendarDay, WeatherInfo, LocationData } from '../types';
-import { Flag, Sun, Cloud, CloudRain, CloudSnow, CloudLightning, CloudFog, Wind, Droplets, MapPin, PlusCircle, Trash2, Loader2, ArrowUp, ArrowDown, BookOpen, Sparkles, Star } from 'lucide-react';
+import { Flag, Sun, Cloud, CloudRain, CloudSnow, CloudLightning, CloudFog, Wind, Droplets, MapPin, PlusCircle, Trash2, Loader2, ArrowUp, ArrowDown, BookOpen, Sparkles, Star, LocateFixed } from 'lucide-react';
 import { ALMANAC_DEFINITIONS, FESTIVAL_DEFINITIONS } from '../constants';
 import { getZodiac } from '../utils/calendarLogic';
 import { getHoroscope } from '../services/geminiService';
@@ -15,6 +15,9 @@ interface DayDetailSectionProps {
   savedLocationsWeather: Record<string, Record<string, WeatherInfo>>; // Map ID -> Date -> Weather
   onRemoveLocation: (id: string) => void;
   onSelectLocation: (loc: LocationData) => void;
+  onRefreshLocation: () => void;
+  isLocating: boolean;
+  locationError: boolean;
 }
 
 export const DayDetailSection: React.FC<DayDetailSectionProps> = ({ 
@@ -25,7 +28,10 @@ export const DayDetailSection: React.FC<DayDetailSectionProps> = ({
   savedLocations,
   savedLocationsWeather,
   onRemoveLocation,
-  onSelectLocation
+  onSelectLocation,
+  onRefreshLocation,
+  isLocating,
+  locationError
 }) => {
   const [selectedTerm, setSelectedTerm] = useState<{name: string, type: 'yi' | 'ji', explanation: string} | null>(null);
   
@@ -170,6 +176,15 @@ export const DayDetailSection: React.FC<DayDetailSectionProps> = ({
   const yiList = Array.isArray(day.yi) ? day.yi : [];
   const jiList = Array.isArray(day.ji) ? day.ji : [];
 
+  const handleLocationBadgeClick = () => {
+    if (currentLocation?.isCurrent) {
+        onRefreshLocation();
+    } else if (currentLocation) {
+        // Refresh weather for saved location
+        onSelectLocation(currentLocation);
+    }
+  };
+
   return (
     <div className="mt-6 space-y-6">
       <div className="bg-surface rounded-2xl shadow-lg border border-gray-100 p-6 animate-in slide-in-from-bottom-4 duration-500 relative">
@@ -233,15 +248,60 @@ export const DayDetailSection: React.FC<DayDetailSectionProps> = ({
 
         {/* Main Weather Section */}
         <div className="mb-6 space-y-4">
-          {weather ? (
+          {/* Priority 1: Locating State (Shown first when app loads) */}
+          {isLocating && !currentLocation ? (
+             <div className="bg-gray-50/80 rounded-2xl p-6 border border-gray-200 text-center flex flex-col items-center justify-center min-h-[160px] animate-pulse">
+                <div className="bg-white p-3 rounded-full shadow-sm mb-3">
+                    <MapPin size={24} className="text-primary animate-bounce" />
+                </div>
+                <h4 className="text-gray-800 font-bold mb-1">正在定位中...</h4>
+                <p className="text-sm text-gray-400">请稍候，正在获取您的位置信息</p>
+             </div>
+          ) : (!currentLocation || locationError) ? (
+            // Priority 2: Error or No Location State
+             <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-200 text-center flex flex-col items-center justify-center min-h-[160px]">
+                <div className="bg-white p-3 rounded-full shadow-sm mb-3">
+                    <MapPin size={24} className="text-gray-400" />
+                </div>
+                <h4 className="text-gray-800 font-bold mb-1">未获取定位或定位失败</h4>
+                <p className="text-sm text-gray-500 mb-4 max-w-xs">请授予浏览器定位权限以显示天气，或手动选择城市。</p>
+                <div className="flex gap-3">
+                   <button 
+                     onClick={onRefreshLocation}
+                     disabled={isLocating}
+                     className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium flex items-center gap-2 hover:bg-opacity-90 transition-all disabled:opacity-70 shadow-sm"
+                   >
+                     {isLocating ? <Loader2 size={16} className="animate-spin" /> : <LocateFixed size={16} />}
+                     重新定位
+                   </button>
+                   <button 
+                     onClick={onAddLocationClick}
+                     className="px-4 py-2 bg-white text-gray-700 border border-gray-200 rounded-lg text-sm font-medium flex items-center gap-2 hover:bg-gray-50 transition-all shadow-sm"
+                   >
+                     <PlusCircle size={16} />
+                     手动选择城市
+                   </button>
+                </div>
+             </div>
+          ) : weather ? (
+             // Priority 3: Weather Display State
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-5 shadow-inner relative overflow-hidden transition-all">
               
               {/* Top Row: Location + Actions */}
               <div className="flex justify-between items-start mb-6">
-                   <div className="flex items-center gap-2 text-gray-700 font-bold bg-white/60 px-3 py-1.5 rounded-full text-sm backdrop-blur-sm border border-white/40 shadow-sm">
-                     <MapPin size={14} className="text-primary" />
-                     {currentLocation?.name || "未知"}
-                  </div>
+                   <button 
+                     onClick={handleLocationBadgeClick}
+                     disabled={isLocating}
+                     className="flex items-center gap-2 text-gray-700 font-bold bg-white/60 px-3 py-1.5 rounded-full text-sm backdrop-blur-sm border border-white/40 shadow-sm hover:bg-white hover:text-primary transition-all cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed group"
+                     title={currentLocation?.isCurrent ? "点击刷新定位" : "点击刷新天气"}
+                   >
+                     {isLocating ? (
+                        <Loader2 size={14} className="animate-spin text-primary" />
+                     ) : (
+                        <MapPin size={14} className={`text-primary group-hover:scale-110 transition-transform`} />
+                     )}
+                     <span>{currentLocation?.name || "未知"}</span>
+                  </button>
 
                   <button 
                     onClick={onAddLocationClick}
@@ -299,6 +359,7 @@ export const DayDetailSection: React.FC<DayDetailSectionProps> = ({
               </div>
             </div>
           ) : (
+             // Priority 4: Loading / Date Out of Range State (when location exists but weather is fetching)
              isWithinWeatherRange(day.date) ? (
                 <div className="bg-gray-50 rounded-xl p-6 flex items-center justify-center border border-dashed border-gray-300">
                    <span className="text-gray-400 flex items-center gap-2 animate-pulse">

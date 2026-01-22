@@ -1,3 +1,4 @@
+
 import { WeatherInfo, LocationData } from '../types';
 
 export const getUserLocation = (): Promise<{ lat: number; lon: number }> => {
@@ -16,6 +17,11 @@ export const getUserLocation = (): Promise<{ lat: number; lon: number }> => {
       },
       (error) => {
         reject(error);
+      },
+      {
+        enableHighAccuracy: false, // Set to false for faster response
+        timeout: 6000,             // 6 seconds timeout before showing error
+        maximumAge: 300000         // Accept cached position up to 5 minutes old
       }
     );
   });
