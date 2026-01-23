@@ -16,6 +16,7 @@ import { LocationSearchModal } from './components/LocationSearchModal';
 import { WorkCycleSettingModal } from './components/WorkCycleSettingModal';
 import { AnniversarySettingModal } from './components/AnniversarySettingModal';
 import { RightSidebar } from './components/RightSidebar';
+import { OnboardingTour } from './components/OnboardingTour';
 import { WEEK_DAYS, WEEK_DAYS_CN, DEFAULT_THEME, SEASONAL_THEMES } from './constants';
 import { CalendarDay, AppTheme, WeatherInfo, LocationData, WorkCycleConfig, Anniversary, AppBackupData } from './types';
 
@@ -311,6 +312,9 @@ function App() {
   return (
     <div className="min-h-screen text-text font-sans transition-colors duration-500 relative">
       <WeatherEffects season={theme.season} enabled={isAnimationEnabled} />
+      
+      {/* Onboarding Tour for new users */}
+      <OnboardingTour />
       
       {/* Right Sidebar - New Feature */}
       <RightSidebar currentDate={currentDate} />
