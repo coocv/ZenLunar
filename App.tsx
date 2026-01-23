@@ -35,7 +35,7 @@ function App() {
   
   // Install Prompt State
   const [installPrompt, setInstallPrompt] = useState<any>(null);
-  const [showIosInstallGuide, setShowIosInstallGuide] = useState(false);
+  const [showInstallGuide, setShowInstallGuide] = useState(false);
   
   // Detect iOS and Standalone mode
   const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
@@ -113,22 +113,22 @@ function App() {
   }, []);
 
   const handleInstallClick = async () => {
-    if (isIos) {
-      setShowIosInstallGuide(true);
-      return;
-    }
-    
-    if (!installPrompt) {
-      // Fallback if button is shown but prompt is missing (shouldn't happen with current logic, but safe)
-      alert("请尝试点击浏览器菜单中的“安装应用”");
+    // 1. Try Native Prompt if available
+    if (installPrompt) {
+      installPrompt.prompt();
+      const { outcome } = await installPrompt.userChoice;
+      console.log('Install prompt outcome:', outcome);
+      
+      // CRITICAL: The event is now invalid (either accepted or dismissed).
+      // We must clear it to avoid "InvalidStateError" on next click.
+      // If user dismissed, the next click will trigger the Guide (Step 2 below).
+      setInstallPrompt(null);
       return;
     }
 
-    installPrompt.prompt();
-    const { outcome } = await installPrompt.userChoice;
-    if (outcome === 'accepted') {
-      setInstallPrompt(null);
-    }
+    // 2. Fallback: Show Manual Guide (iOS or Desktop/Android manual menu)
+    // This happens if prompt is already consumed (dismissed) or not supported (iOS).
+    setShowInstallGuide(true);
   };
 
   const [isInsightOpen, setIsInsightOpen] = useState(false);
@@ -356,8 +356,8 @@ function App() {
       {/* Onboarding Tour for new users */}
       <OnboardingTour />
 
-      {/* iOS Install Guide */}
-      {showIosInstallGuide && <InstallPwaGuide onClose={() => setShowIosInstallGuide(false)} />}
+      {/* Install Guide Modal (iOS or Manual Fallback) */}
+      {showInstallGuide && <InstallPwaGuide onClose={() => setShowInstallGuide(false)} isIos={isIos} />}
       
       {/* Right Sidebar - New Feature */}
       <RightSidebar currentDate={currentDate} />
@@ -381,8 +381,9 @@ function App() {
               </div>
             )}
             
-            {/* Logic: Show install button if Chrome/Edge prompt available OR if on iOS (and not already installed) */}
-            {(installPrompt || (isIos && !isStandalone)) && (
+            {/* Logic: Always show install button if not installed (standalone check).
+                If installPrompt is missing (iOS or dismissed), click triggers Guide. */}
+            {!isStandalone && (
               <button 
                 onClick={handleInstallClick} 
                 className="flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-primary to-orange-500 text-white rounded-full shadow-md hover:shadow-lg hover:opacity-90 transition-all transform active:scale-95 animate-pulse" 
