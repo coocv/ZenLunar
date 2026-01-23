@@ -116,7 +116,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ currentDate }) => {
               saveTodos([]);
           }
       } else {
-          if(window.confirm(`确定清空 ${dateLabel} 的小计吗？`)) {
+          if(window.confirm(`确定清空 ${dateLabel} 的随笔吗？`)) {
               setSummaryContent('');
               localStorage.setItem(`zenlunar_summary_${dateKey}`, '');
           }
@@ -160,12 +160,12 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ currentDate }) => {
                 shadow-lg p-3 rounded-l-2xl transition-all duration-300 group relative border-y border-l
                 bg-white/90 backdrop-blur-sm text-gray-500 border-gray-100 hover:text-primary hover:pl-4 hover:shadow-xl
             `}
-            title="今日小计"
+            title="今日随笔"
         >
             <NotebookPen size={22} />
             {/* Tooltip */}
             <span className="absolute right-full top-1/2 -translate-y-1/2 mr-3 bg-gray-800 text-white text-xs px-2.5 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl font-medium">
-                今日小计
+                今日随笔
             </span>
         </button>
       </div>
@@ -189,7 +189,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ currentDate }) => {
                 </div>
                 <div>
                     <h3 className="font-bold text-gray-800 text-lg tracking-tight">
-                        {activePanel === 'todo' ? '今日日程' : '今日小计'}
+                        {activePanel === 'todo' ? '今日日程' : '今日随笔'}
                     </h3>
                     <p className="text-xs text-gray-400 font-medium font-mono">{dateLabel}</p>
                 </div>
