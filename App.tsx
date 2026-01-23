@@ -18,6 +18,7 @@ import { AnniversarySettingModal } from './components/AnniversarySettingModal';
 import { RightSidebar } from './components/RightSidebar';
 import { OnboardingTour } from './components/OnboardingTour';
 import { InstallPwaGuide } from './components/InstallPwaGuide';
+import { AppLogo } from './components/AppLogo';
 import { WEEK_DAYS, WEEK_DAYS_CN, DEFAULT_THEME, SEASONAL_THEMES } from './constants';
 import { CalendarDay, AppTheme, WeatherInfo, LocationData, WorkCycleConfig, Anniversary, AppBackupData } from './types';
 
@@ -145,8 +146,9 @@ function App() {
 
     document.title = `${month}月${date}日 周${weekDay} • ZenLunar`;
 
-    // High compatibility Base64 Favicon for Safari/iOS
-    const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="${theme.colors.primary}"/><stop offset="100%" stop-color="${theme.colors.accent}"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#g)"/><rect x="20" y="24" width="60" height="56" rx="8" fill="white"/><circle cx="35" cy="20" r="5" fill="white" fill-opacity="0.9"/><circle cx="65" cy="20" r="5" fill="white" fill-opacity="0.9"/><text x="50" y="62" font-family="sans-serif" font-weight="bold" font-size="32" fill="${theme.colors.primary}" text-anchor="middle" dominant-baseline="middle">${date}</text></svg>`;
+    // Updated Favicon to match AppLogo style
+    // SVG string matching AppLogo.tsx
+    const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><rect width="120" height="120" rx="28" fill="${theme.colors.primary}"/><path d="M32 42H88" stroke="white" stroke-width="8" stroke-linecap="round"/><path d="M32 68H88" stroke="white" stroke-width="8" stroke-linecap="round" stroke-opacity="0.5"/><path d="M32 94H58" stroke="white" stroke-width="8" stroke-linecap="round" stroke-opacity="0.5"/><circle cx="84" cy="90" r="10" fill="white" fill-opacity="0.9"/></svg>`;
 
     const base64Svg = btoa(unescape(encodeURIComponent(svgIcon)));
     const dataUri = `data:image/svg+xml;base64,${base64Svg}`;
@@ -163,7 +165,7 @@ function App() {
     };
 
     updateFavicon();
-  }, [currentDate, theme.colors.primary, theme.colors.accent]);
+  }, [currentDate, theme.colors.primary]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -363,13 +365,15 @@ function App() {
 
       <nav className="bg-surface/90 backdrop-blur-sm shadow-sm border-b border-gray-100 sticky top-0 z-30">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={handleToday}>
-            <div className="bg-primary text-white p-2 rounded-lg transition-colors duration-500">
-               <CalendarIcon size={24} />
-            </div>
-            <h1 className="text-xl font-serif font-bold tracking-tight text-gray-800 hidden sm:block">
+          <div className="flex items-center gap-3 cursor-pointer group" onClick={handleToday}>
+             {/* New App Logo */}
+             <div className="transition-transform duration-300 group-hover:scale-110">
+                <AppLogo size={42} />
+             </div>
+             
+             <h1 className="text-xl font-serif font-bold tracking-tight text-gray-800 hidden sm:block">
               ZenLunar <span className="text-primary transition-colors duration-500">禅历</span>
-            </h1>
+             </h1>
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
             {locationError && (
