@@ -382,10 +382,11 @@ function App() {
             {(installPrompt || (isIos && !isStandalone)) && (
               <button 
                 onClick={handleInstallClick} 
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors text-primary relative animate-pulse" 
+                className="flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-primary to-orange-500 text-white rounded-full shadow-md hover:shadow-lg hover:opacity-90 transition-all transform active:scale-95 animate-pulse" 
                 title={isIos ? "安装应用" : "安装为应用"}
               >
-                <Download size={22} />
+                <Download size={16} />
+                <span className="text-xs font-bold">安装App</span>
               </button>
             )}
 
