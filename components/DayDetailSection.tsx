@@ -359,20 +359,12 @@ export const DayDetailSection: React.FC<DayDetailSectionProps> = ({
               </div>
             </div>
           ) : (
-             // Priority 4: Loading / Date Out of Range State (when location exists but weather is fetching)
-             isWithinWeatherRange(day.date) ? (
-                <div className="bg-gray-50 rounded-xl p-6 flex items-center justify-center border border-dashed border-gray-300">
-                   <span className="text-gray-400 flex items-center gap-2 animate-pulse">
-                     <Loader2 size={18} className="animate-spin" /> 正在获取天气信息...
-                   </span>
-                </div>
-             ) : (
-                <div className="bg-gray-50/50 rounded-xl p-6 flex items-center justify-center border border-dashed border-gray-200">
-                   <span className="text-gray-400 text-sm">
-                      暂无该日期的天气数据 (仅显示前后15天)
-                   </span>
-                </div>
-             )
+             // Priority 4: Failed / No Data State
+             <div className="bg-gray-50/50 rounded-xl p-6 flex items-center justify-center border border-dashed border-gray-200">
+                <span className="text-gray-400 text-sm">
+                   {isWithinWeatherRange(day.date) ? "暂无天气数据" : "暂无该日期的天气数据 (仅显示前后15天)"}
+                </span>
+             </div>
           )}
 
           {/* Saved Locations List */}

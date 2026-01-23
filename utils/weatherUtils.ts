@@ -180,38 +180,53 @@ export const searchCity = async (query: string): Promise<LocationData[]> => {
 };
 
 export const fetchWeather = async (lat: number, lon: number): Promise<Record<string, WeatherInfo>> => {
+  if (isNaN(lat) || isNaN(lon)) {
+      console.warn("Fetch weather called with invalid coordinates");
+      return {};
+  }
+
   try {
-    // Open-Meteo API (Free, No Key required)
-    // Updated: request forecast_days=16 (Today + 15 days) and past_days=15 (Previous 15 days)
-    const response = await fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,relative_humidity_2m,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&past_days=15&forecast_days=16`
-    );
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 seconds timeout
+
+    // Explicitly set timezone to avoid 'auto' resolution failures in some network environments
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'auto';
     
-    if (!response.ok) throw new Error('Weather fetch failed');
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,relative_humidity_2m,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=${encodeURIComponent(timezone)}&past_days=15&forecast_days=16`;
+
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+        console.warn(`Weather API returned status: ${response.status}`);
+        return {};
+    }
     
     const data = await response.json();
     const weatherMap: Record<string, WeatherInfo> = {};
 
     // Process Daily Forecast
-    data.daily.time.forEach((dateStr: string, index: number) => {
-      const code = data.daily.weather_code[index];
-      const { description, iconType } = mapWmoCode(code);
-      
-      weatherMap[dateStr] = {
-        tempMax: data.daily.temperature_2m_max[index],
-        tempMin: data.daily.temperature_2m_min[index],
-        code: code,
-        description: description,
-        iconType: iconType
-      };
-    });
+    if (data.daily && data.daily.time) {
+        data.daily.time.forEach((dateStr: string, index: number) => {
+            const code = data.daily.weather_code[index];
+            const { description, iconType } = mapWmoCode(code);
+            
+            weatherMap[dateStr] = {
+                tempMax: data.daily.temperature_2m_max[index],
+                tempMin: data.daily.temperature_2m_min[index],
+                code: code,
+                description: description,
+                iconType: iconType
+            };
+        });
+    }
 
-    // Add Current Weather specific details to "Today"
-    // Use local date string to match keys provided by API with timezone=auto
+    // Process Current Weather
+    // Ensure we match the local date key correctly
     const offset = new Date().getTimezoneOffset() * 60000;
     const todayStr = new Date(Date.now() - offset).toISOString().split('T')[0];
     
-    if (weatherMap[todayStr]) {
+    if (weatherMap[todayStr] && data.current) {
       weatherMap[todayStr].currentTemp = data.current.temperature_2m;
       weatherMap[todayStr].humidity = data.current.relative_humidity_2m;
       weatherMap[todayStr].windSpeed = data.current.wind_speed_10m;
@@ -223,7 +238,7 @@ export const fetchWeather = async (lat: number, lon: number): Promise<Record<str
 
     return weatherMap;
   } catch (error) {
-    console.error("Weather Error:", error);
+    console.warn("Weather Error:", error);
     return {};
   }
 };
