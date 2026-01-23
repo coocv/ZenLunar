@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   ChevronLeft, ChevronRight, Settings, Calendar as CalendarIcon, 
   Sparkles, RotateCcw, MapPin, Navigation, ChevronDown, 
-  Briefcase, CalendarClock, Heart, Loader2 
+  Briefcase, CalendarClock, Heart, Loader2, Download
 } from 'lucide-react';
 import { getCalendarMonthDays, formatDateFull } from './utils/calendarLogic';
 import { getUserLocation, fetchWeather, getCityNameFromCoords } from './utils/weatherUtils';
@@ -17,6 +17,7 @@ import { WorkCycleSettingModal } from './components/WorkCycleSettingModal';
 import { AnniversarySettingModal } from './components/AnniversarySettingModal';
 import { RightSidebar } from './components/RightSidebar';
 import { OnboardingTour } from './components/OnboardingTour';
+import { InstallPwaGuide } from './components/InstallPwaGuide';
 import { WEEK_DAYS, WEEK_DAYS_CN, DEFAULT_THEME, SEASONAL_THEMES } from './constants';
 import { CalendarDay, AppTheme, WeatherInfo, LocationData, WorkCycleConfig, Anniversary, AppBackupData } from './types';
 
@@ -31,6 +32,14 @@ function App() {
   const monthDropdownRef = useRef<HTMLDivElement>(null);
   const yearListRef = useRef<HTMLDivElement>(null);
   
+  // Install Prompt State
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
+  const [showIosInstallGuide, setShowIosInstallGuide] = useState(false);
+  
+  // Detect iOS and Standalone mode
+  const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
+
   // Start with true to show loading state immediately instead of error state
   const [isLocating, setIsLocating] = useState(true);
   const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
@@ -90,6 +99,36 @@ function App() {
       localStorage.setItem('zenlunar_is_custom_theme', String(isCustomTheme));
       if (isCustomTheme) localStorage.setItem('zenlunar_custom_theme_data', JSON.stringify(theme));
   }, [theme, isCustomTheme]);
+
+  // Install Prompt Listener
+  useEffect(() => {
+    const handler = (e: any) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+      console.log('Install prompt captured');
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (isIos) {
+      setShowIosInstallGuide(true);
+      return;
+    }
+    
+    if (!installPrompt) {
+      // Fallback if button is shown but prompt is missing (shouldn't happen with current logic, but safe)
+      alert("请尝试点击浏览器菜单中的“安装应用”");
+      return;
+    }
+
+    installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setInstallPrompt(null);
+    }
+  };
 
   const [isInsightOpen, setIsInsightOpen] = useState(false);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -315,6 +354,9 @@ function App() {
       
       {/* Onboarding Tour for new users */}
       <OnboardingTour />
+
+      {/* iOS Install Guide */}
+      {showIosInstallGuide && <InstallPwaGuide onClose={() => setShowIosInstallGuide(false)} />}
       
       {/* Right Sidebar - New Feature */}
       <RightSidebar currentDate={currentDate} />
@@ -336,6 +378,17 @@ function App() {
               </div>
             )}
             
+            {/* Logic: Show install button if Chrome/Edge prompt available OR if on iOS (and not already installed) */}
+            {(installPrompt || (isIos && !isStandalone)) && (
+              <button 
+                onClick={handleInstallClick} 
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors text-primary relative animate-pulse" 
+                title={isIos ? "安装应用" : "安装为应用"}
+              >
+                <Download size={22} />
+              </button>
+            )}
+
             <button onClick={() => { setActiveSettingsMode('cycle'); setIsWorkCycleOpen(true); }} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-600 relative" title="工作循环">
                <Briefcase size={22} />
                {workCycleConfig.cycleEnabled && <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full border border-white"></span>}
