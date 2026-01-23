@@ -37,9 +37,11 @@ function App() {
   const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [showInstallGuide, setShowInstallGuide] = useState(false);
   
-  // Detect iOS and Standalone mode
+  // Robust Installation Detection State
+  const [isAppInstalled, setIsAppInstalled] = useState(false);
+  
+  // Detect iOS
   const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
 
   // Start with true to show loading state immediately instead of error state
   const [isLocating, setIsLocating] = useState(true);
@@ -112,6 +114,46 @@ function App() {
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
+  // Real-time Installation Status Check
+  useEffect(() => {
+    const checkInstallState = () => {
+      // Check if running in standalone mode (installed)
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                           (window.navigator as any).standalone === true;
+      setIsAppInstalled(isStandalone);
+    };
+
+    // 1. Check immediately
+    checkInstallState();
+
+    // 2. Listen for 'appinstalled' event (Success)
+    window.addEventListener('appinstalled', () => {
+       console.log('App installed successfully');
+       checkInstallState();
+       setInstallPrompt(null);
+    });
+
+    // 3. Listen for display-mode changes (e.g. user opens app from browser)
+    const mediaQuery = window.matchMedia('(display-mode: standalone)');
+    const mqListener = (e: MediaQueryListEvent) => setIsAppInstalled(e.matches);
+    
+    // Safely add listener for various browser compatibilities
+    if (mediaQuery.addEventListener) {
+       mediaQuery.addEventListener('change', mqListener);
+    } else {
+       mediaQuery.addListener(mqListener);
+    }
+
+    return () => {
+      window.removeEventListener('appinstalled', checkInstallState);
+      if (mediaQuery.removeEventListener) {
+         mediaQuery.removeEventListener('change', mqListener);
+      } else {
+         mediaQuery.removeListener(mqListener);
+      }
+    };
+  }, []);
+
   const handleInstallClick = async () => {
     // 1. Try Native Prompt if available
     if (installPrompt) {
@@ -119,16 +161,15 @@ function App() {
       const { outcome } = await installPrompt.userChoice;
       console.log('Install prompt outcome:', outcome);
       
-      // CRITICAL: The event is now invalid (either accepted or dismissed).
-      // We must clear it to avoid "InvalidStateError" on next click.
-      // If user dismissed, the next click will trigger the Guide (Step 2 below).
+      // We must clear the used prompt variable as it cannot be reused.
+      // However, we DO NOT hide the button here unless the app actually gets installed (handled by useEffect above).
+      // If outcome is 'dismissed', the button remains visible (since isAppInstalled is still false).
       setInstallPrompt(null);
-      return;
+    } else {
+      // 2. Fallback: If prompt is missing (iOS or dismissed previously), show the manual guide.
+      // This ensures the button always does *something* and doesn't appear broken.
+      setShowInstallGuide(true);
     }
-
-    // 2. Fallback: Show Manual Guide (iOS or Desktop/Android manual menu)
-    // This happens if prompt is already consumed (dismissed) or not supported (iOS).
-    setShowInstallGuide(true);
   };
 
   const [isInsightOpen, setIsInsightOpen] = useState(false);
@@ -146,7 +187,7 @@ function App() {
 
     document.title = `${month}月${date}日 周${weekDay} • ZenLunar`;
 
-    // Dynamic Date Favicon (Restored)
+    // Dynamic Date Favicon
     const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="${theme.colors.primary}"/><stop offset="100%" stop-color="${theme.colors.accent}"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#g)"/><rect x="20" y="24" width="60" height="56" rx="8" fill="white"/><circle cx="35" cy="20" r="5" fill="white" fill-opacity="0.9"/><circle cx="65" cy="20" r="5" fill="white" fill-opacity="0.9"/><text x="50" y="62" font-family="sans-serif" font-weight="bold" font-size="32" fill="${theme.colors.primary}" text-anchor="middle" dominant-baseline="middle">${date}</text></svg>`;
 
     const base64Svg = btoa(unescape(encodeURIComponent(svgIcon)));
@@ -381,9 +422,9 @@ function App() {
               </div>
             )}
             
-            {/* Logic: Always show install button if not installed (standalone check).
-                If installPrompt is missing (iOS or dismissed), click triggers Guide. */}
-            {!isStandalone && (
+            {/* Logic: Only show install button if app is NOT installed. 
+                Using isAppInstalled state ensures it doesn't disappear just because the prompt was dismissed. */}
+            {!isAppInstalled && (
               <button 
                 onClick={handleInstallClick} 
                 className="flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-primary to-orange-500 text-white rounded-full shadow-md hover:shadow-lg hover:opacity-90 transition-all transform active:scale-95 animate-pulse" 
