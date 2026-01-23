@@ -16,18 +16,19 @@ export const AppLogo: React.FC<AppLogoProps> = ({ size = 40, className = "" }) =
     className={className}
   >
     <rect width="120" height="120" rx="28" fill="url(#paint0_linear)" />
-    {/* Minimalist Calendar Lines */}
-    <path d="M32 42H88" stroke="white" strokeWidth="8" strokeLinecap="round"/>
-    <path d="M32 68H88" stroke="white" strokeWidth="8" strokeLinecap="round" strokeOpacity="0.5"/>
-    <path d="M32 94H58" stroke="white" strokeWidth="8" strokeLinecap="round" strokeOpacity="0.5"/>
     
-    {/* Stylized Moon/Dot */}
-    <circle cx="84" cy="90" r="10" fill="white" fillOpacity="0.9"/>
+    {/* Modern Abstract Calendar Lines - Thicker & Bolder */}
+    <path d="M30 40H90" stroke="white" strokeWidth="11" strokeLinecap="round"/>
+    <path d="M30 65H90" stroke="white" strokeWidth="11" strokeLinecap="round" strokeOpacity="0.6"/>
+    <path d="M30 90H60" stroke="white" strokeWidth="11" strokeLinecap="round" strokeOpacity="0.6"/>
+    
+    {/* Accent Dot (Sun/Moon/Focus) */}
+    <circle cx="82" cy="90" r="8" fill="white"/>
     
     <defs>
       <linearGradient id="paint0_linear" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
         <stop stopColor="var(--color-primary, #e60012)"/>
-        <stop offset="1" stopColor="var(--color-accent, #ff8e93)"/>
+        <stop offset="1" stopColor="var(--color-accent, #fbbf24)"/>
       </linearGradient>
     </defs>
   </svg>
