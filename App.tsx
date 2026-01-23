@@ -43,7 +43,11 @@ function App() {
   // Detect iOS
   const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
 
-  // Start with true to show loading state immediately instead of error state
+  // App Settings
+  const [isDynamicTabEnabled, setIsDynamicTabEnabled] = useState(() => {
+    try { return localStorage.getItem('zenlunar_dynamic_tab') === 'true'; } catch { return false; }
+  });
+  
   const [isLocating, setIsLocating] = useState(true);
   const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
   const [savedLocations, setSavedLocations] = useState<LocationData[]>(() => {
@@ -96,6 +100,7 @@ function App() {
   });
 
   useEffect(() => { localStorage.setItem('zenlunar_animation', String(isAnimationEnabled)); }, [isAnimationEnabled]);
+  useEffect(() => { localStorage.setItem('zenlunar_dynamic_tab', String(isDynamicTabEnabled)); }, [isDynamicTabEnabled]);
   useEffect(() => { localStorage.setItem('zenlunar_work_cycle', JSON.stringify(workCycleConfig)); }, [workCycleConfig]);
   useEffect(() => { localStorage.setItem('zenlunar_anniversaries', JSON.stringify(anniversaries)); }, [anniversaries]);
   useEffect(() => {
@@ -108,7 +113,6 @@ function App() {
     const handler = (e: any) => {
       e.preventDefault();
       setInstallPrompt(e);
-      console.log('Install prompt captured');
     };
     window.addEventListener('beforeinstallprompt', handler);
     return () => window.removeEventListener('beforeinstallprompt', handler);
@@ -117,57 +121,32 @@ function App() {
   // Real-time Installation Status Check
   useEffect(() => {
     const checkInstallState = () => {
-      // Check if running in standalone mode (installed)
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
                            (window.navigator as any).standalone === true;
       setIsAppInstalled(isStandalone);
     };
-
-    // 1. Check immediately
     checkInstallState();
-
-    // 2. Listen for 'appinstalled' event (Success)
     window.addEventListener('appinstalled', () => {
-       console.log('App installed successfully');
        checkInstallState();
        setInstallPrompt(null);
     });
-
-    // 3. Listen for display-mode changes (e.g. user opens app from browser)
     const mediaQuery = window.matchMedia('(display-mode: standalone)');
     const mqListener = (e: MediaQueryListEvent) => setIsAppInstalled(e.matches);
-    
-    // Safely add listener for various browser compatibilities
-    if (mediaQuery.addEventListener) {
-       mediaQuery.addEventListener('change', mqListener);
-    } else {
-       mediaQuery.addListener(mqListener);
-    }
-
+    if (mediaQuery.addEventListener) mediaQuery.addEventListener('change', mqListener);
+    else mediaQuery.addListener(mqListener);
     return () => {
       window.removeEventListener('appinstalled', checkInstallState);
-      if (mediaQuery.removeEventListener) {
-         mediaQuery.removeEventListener('change', mqListener);
-      } else {
-         mediaQuery.removeListener(mqListener);
-      }
+      if (mediaQuery.removeEventListener) mediaQuery.removeEventListener('change', mqListener);
+      else mediaQuery.removeListener(mqListener);
     };
   }, []);
 
   const handleInstallClick = async () => {
-    // 1. Try Native Prompt if available
     if (installPrompt) {
       installPrompt.prompt();
-      const { outcome } = await installPrompt.userChoice;
-      console.log('Install prompt outcome:', outcome);
-      
-      // We must clear the used prompt variable as it cannot be reused.
-      // However, we DO NOT hide the button here unless the app actually gets installed (handled by useEffect above).
-      // If outcome is 'dismissed', the button remains visible (since isAppInstalled is still false).
+      await installPrompt.userChoice;
       setInstallPrompt(null);
     } else {
-      // 2. Fallback: If prompt is missing (iOS or dismissed previously), show the manual guide.
-      // This ensures the button always does *something* and doesn't appear broken.
       setShowInstallGuide(true);
     }
   };
@@ -178,8 +157,23 @@ function App() {
   const [isWorkCycleOpen, setIsWorkCycleOpen] = useState(false);
   const [isAnniversaryOpen, setIsAnniversaryOpen] = useState(false);
 
-  // === Enhanced Browser Tab & Favicon for Apple/WebKit ===
+  // === Dynamic Browser Tab & Favicon Logic ===
   useEffect(() => {
+    const staticTitle = "ZenLunar 禅历";
+    const staticIcon = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNlNjAwMTIiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNmYmJmMjQiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyOCIgZmlsbD0idXJsKCNnKSIvPjxwYXRoIGQ9Ik0xMjggMTcwaDI1NiIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSI0OCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTEyOCAyNzZoMjU2IiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjQ4IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1vcGFjaXR5PSIwLjYiLz48cGF0aCBkPSJNMTI4IDM4MmgxMjAiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iNDgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLW9wYWNpdHk9IjAuNiIvPjxjaXJjbGUgY3g9IjM1MCIgY3k9IjM4MiIgcj0iMzIiIGZpbGw9IndoaXRlIi8+PC9zdmc+";
+
+    if (!isDynamicTabEnabled) {
+      document.title = staticTitle;
+      const existingIcons = document.querySelectorAll("link[rel*='icon']");
+      existingIcons.forEach(el => el.remove());
+      const link = document.createElement('link');
+      link.type = 'image/svg+xml';
+      link.rel = 'icon';
+      link.href = staticIcon;
+      document.head.appendChild(link);
+      return;
+    }
+
     const month = currentDate.getMonth() + 1;
     const date = currentDate.getDate();
     const dayIndex = (currentDate.getDay() + 6) % 7;
@@ -187,25 +181,18 @@ function App() {
 
     document.title = `${month}月${date}日 周${weekDay} • ZenLunar`;
 
-    // Dynamic Date Favicon
     const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="${theme.colors.primary}"/><stop offset="100%" stop-color="${theme.colors.accent}"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#g)"/><rect x="20" y="24" width="60" height="56" rx="8" fill="white"/><circle cx="35" cy="20" r="5" fill="white" fill-opacity="0.9"/><circle cx="65" cy="20" r="5" fill="white" fill-opacity="0.9"/><text x="50" y="62" font-family="sans-serif" font-weight="bold" font-size="32" fill="${theme.colors.primary}" text-anchor="middle" dominant-baseline="middle">${date}</text></svg>`;
-
     const base64Svg = btoa(unescape(encodeURIComponent(svgIcon)));
     const dataUri = `data:image/svg+xml;base64,${base64Svg}`;
 
-    const updateFavicon = () => {
-      const existingIcons = document.querySelectorAll("link[rel*='icon']");
-      existingIcons.forEach(el => el.remove());
-
-      const link = document.createElement('link');
-      link.type = 'image/svg+xml';
-      link.rel = 'icon';
-      link.href = dataUri;
-      document.head.appendChild(link);
-    };
-
-    updateFavicon();
-  }, [currentDate, theme.colors.primary, theme.colors.accent]);
+    const existingIcons = document.querySelectorAll("link[rel*='icon']");
+    existingIcons.forEach(el => el.remove());
+    const link = document.createElement('link');
+    link.type = 'image/svg+xml';
+    link.rel = 'icon';
+    link.href = dataUri;
+    document.head.appendChild(link);
+  }, [currentDate, theme.colors.primary, theme.colors.accent, isDynamicTabEnabled]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -252,7 +239,7 @@ function App() {
            const data = await fetchWeather(activeLoc.lat, activeLoc.lon);
            setWeatherMap(data);
            setLocationError(false);
-           setIsLocating(false); // Stop loading if cache is valid
+           setIsLocating(false);
         } else { handleBackToGPS(); }
       } catch (e) { handleBackToGPS(); }
     };
@@ -272,7 +259,6 @@ function App() {
         setWeatherMap(data);
      } catch (e) { 
         setLocationError(true); 
-        console.error("Locating failed", e);
      } finally {
         setIsLocating(false);
      }
@@ -369,6 +355,7 @@ function App() {
         if (data.theme) setTheme(data.theme);
         setIsCustomTheme(!!data.isCustomTheme);
         setIsAnimationEnabled(!!data.isAnimationEnabled);
+        setIsDynamicTabEnabled(!!data.isDynamicTabEnabled);
         setIsPanelOpen(false);
     }
   };
@@ -381,7 +368,8 @@ function App() {
     savedLocations: savedLocations,
     theme: theme,
     isCustomTheme: isCustomTheme,
-    isAnimationEnabled: isAnimationEnabled
+    isAnimationEnabled: isAnimationEnabled,
+    isDynamicTabEnabled: isDynamicTabEnabled
   };
 
   const currentDayObject = days.find(d => d.date.toDateString() === currentDate.toDateString()) || null;
@@ -393,24 +381,15 @@ function App() {
   return (
     <div className="min-h-screen text-text font-sans transition-colors duration-500 relative">
       <WeatherEffects season={theme.season} enabled={isAnimationEnabled} />
-      
-      {/* Onboarding Tour for new users */}
       <OnboardingTour />
-
-      {/* Install Guide Modal (iOS or Manual Fallback) */}
       {showInstallGuide && <InstallPwaGuide onClose={() => setShowInstallGuide(false)} isIos={isIos} />}
-      
-      {/* Right Sidebar - New Feature */}
       <RightSidebar currentDate={currentDate} />
-
       <nav className="bg-surface/90 backdrop-blur-sm shadow-sm border-b border-gray-100 sticky top-0 z-30">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3 cursor-pointer group" onClick={handleToday}>
-             {/* New App Logo */}
              <div className="transition-transform duration-300 group-hover:scale-110">
                 <AppLogo size={42} />
              </div>
-             
              <h1 className="text-xl font-serif font-bold tracking-tight text-gray-800 hidden sm:block">
               ZenLunar <span className="text-primary transition-colors duration-500">禅历</span>
              </h1>
@@ -421,9 +400,6 @@ function App() {
                 <MapPin size={10} /> <span>无定位权限</span>
               </div>
             )}
-            
-            {/* Logic: Only show install button if app is NOT installed. 
-                Using isAppInstalled state ensures it doesn't disappear just because the prompt was dismissed. */}
             {!isAppInstalled && (
               <button 
                 onClick={handleInstallClick} 
@@ -434,7 +410,6 @@ function App() {
                 <span className="text-xs font-bold">安装App</span>
               </button>
             )}
-
             <button onClick={() => { setActiveSettingsMode('cycle'); setIsWorkCycleOpen(true); }} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-600 relative" title="工作循环">
                <Briefcase size={22} />
                {workCycleConfig.cycleEnabled && <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full border border-white"></span>}
@@ -550,6 +525,8 @@ function App() {
         onClose={() => setIsPanelOpen(false)} 
         isAnimationEnabled={isAnimationEnabled} 
         onToggleAnimation={setIsAnimationEnabled} 
+        isDynamicTabEnabled={isDynamicTabEnabled}
+        onToggleDynamicTab={setIsDynamicTabEnabled}
         fullConfig={fullConfig} 
         onImport={handleImportData} 
       />

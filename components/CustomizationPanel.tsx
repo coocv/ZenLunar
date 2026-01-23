@@ -1,6 +1,6 @@
 
 import React, { useRef } from 'react';
-import { Palette, RefreshCw, Zap, Download, Upload, Save } from 'lucide-react';
+import { Palette, RefreshCw, Zap, Download, Upload, Save, Layout } from 'lucide-react';
 import { AppTheme, AppBackupData } from '../types';
 import { DEFAULT_THEME } from '../constants';
 
@@ -11,6 +11,8 @@ interface CustomizationPanelProps {
   onClose: () => void;
   isAnimationEnabled: boolean;
   onToggleAnimation: (enabled: boolean) => void;
+  isDynamicTabEnabled: boolean;
+  onToggleDynamicTab: (enabled: boolean) => void;
   fullConfig: AppBackupData;
   onImport: (data: AppBackupData) => void;
 }
@@ -22,6 +24,8 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
   onClose,
   isAnimationEnabled,
   onToggleAnimation,
+  isDynamicTabEnabled,
+  onToggleDynamicTab,
   fullConfig,
   onImport
 }) => {
@@ -60,7 +64,6 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
           }
       };
       reader.readAsText(file);
-      // Reset input value to allow re-importing same file if needed
       e.target.value = '';
   };
 
@@ -79,15 +82,16 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
 
         <div className="space-y-6 flex-1 overflow-y-auto pr-1">
           {/* Display Settings */}
-          <div>
-            <h4 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
-              <Zap size={16} className="text-primary" /> 显示设置
+          <div className="space-y-4">
+            <h4 className="text-sm font-bold text-gray-800 mb-1 flex items-center gap-2">
+              <Zap size={16} className="text-primary" /> 显示与交互
             </h4>
+            
             <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 flex items-center justify-between">
                <div>
                   <div className="font-medium text-gray-800 text-sm">季节氛围动画</div>
-                  <div className="text-xs text-gray-500 mt-1">
-                     {isAnimationEnabled ? '开启 (飘雪、落叶等)' : '关闭 (仅静态背景)'}
+                  <div className="text-[10px] text-gray-500 mt-1">
+                     开启后显示飘雪、落叶等动态特效
                   </div>
                </div>
                <button 
@@ -101,6 +105,29 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
                    className={`
                      inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200
                      ${isAnimationEnabled ? 'translate-x-6' : 'translate-x-1'}
+                   `}
+                 />
+               </button>
+            </div>
+
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 flex items-center justify-between">
+               <div>
+                  <div className="font-medium text-gray-800 text-sm">动态标签页与图标</div>
+                  <div className="text-[10px] text-gray-500 mt-1">
+                     标题和图标随日期自动更新
+                  </div>
+               </div>
+               <button 
+                 onClick={() => onToggleDynamicTab(!isDynamicTabEnabled)}
+                 className={`
+                   relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2
+                   ${isDynamicTabEnabled ? 'bg-primary' : 'bg-gray-300'}
+                 `}
+               >
+                 <span
+                   className={`
+                     inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200
+                     ${isDynamicTabEnabled ? 'translate-x-6' : 'translate-x-1'}
                    `}
                  />
                </button>
@@ -159,11 +186,7 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
                    onChange={handleFileChange}
                 />
              </div>
-             <p className="text-[10px] text-gray-400 mt-2 leading-relaxed">
-                包含：纪念日、工作制设置、已保存城市、当前主题与偏好。
-             </p>
           </div>
-
         </div>
       </div>
     </div>

@@ -53,19 +53,16 @@ export interface LocationData {
 }
 
 export interface WorkCycleConfig {
-  // Regular Cycle Settings
-  cycleEnabled: boolean; // Toggle for the recurring pattern (Big/Small or Single)
-  cycleMode: 'alternating' | 'single'; // 'alternating' = Big/Small Week, 'single' = Single Day Off (Work Sat)
-  anchorDate: string; // ISO Date string of a reference Saturday (for alternating)
-  anchorType: 'big' | 'small'; // 'big' = Reference date is Rest, 'small' = Reference date is Work
-
-  // Exception Settings (Always applicable if defined)
-  exceptions: Record<string, 'work' | 'rest'>; // Custom overrides: 'YYYY-MM-DD' -> status
+  cycleEnabled: boolean;
+  cycleMode: 'alternating' | 'single';
+  anchorDate: string;
+  anchorType: 'big' | 'small';
+  exceptions: Record<string, 'work' | 'rest'>;
 }
 
 export interface Anniversary {
   id: string;
-  date: string; // Format: "MM-DD"
+  date: string;
   name: string;
 }
 
@@ -83,4 +80,5 @@ export interface AppBackupData {
   theme: AppTheme;
   isCustomTheme: boolean;
   isAnimationEnabled: boolean;
+  isDynamicTabEnabled?: boolean;
 }
