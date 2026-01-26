@@ -100,7 +100,7 @@ const HISTORY_EVENTS: Record<string, string[]> = {
   "07-20": ["1969年7月20日，阿波罗11号登月，阿姆斯特朗迈出人类一大步。", "1973年7月20日，李小龙逝世。"],
   "07-28": ["1914年7月28日，奥匈帝国向塞尔维亚宣战，第一次世界大战爆发。", "1976年7月28日，唐山大地震。"],
   "08-01": ["1927年8月1日，南昌起义（建军节）。", "1894年8月1日，中日甲午战争爆发。"],
-  "08-06": ["1945年8月6日，美国向广岛投掷原子弹，人类历史上首次使用核武器。"],
+  "08-06": ["1945年8月6日，美国向广岛投掷原子弹，人类首次使用核武器。"],
   "08-08": ["2008年8月8日，北京奥运会开幕。"],
   "08-15": ["1945年8月15日，日本宣布无条件投降，二战结束。", "1914年8月15日，巴拿马运河通航。"],
   "08-26": ["1980年8月26日，深圳经济特区成立。", "1789年8月26日，法国通过《人权宣言》。"],
@@ -149,7 +149,7 @@ const LUCKY_COLORS = [
 ];
 
 // Offline Pool (Simplified - just general insights)
-// Used ONLY when AI fails.
+// Used ONLY when AI fails or for Daily Insight.
 const OFFLINE_INSIGHTS = [
     "静水流深，今日宜沉淀内心，不随波逐流。",
     "星光不问赶路人，你的努力终将被看见。",
@@ -225,7 +225,7 @@ export const generateTheme = async (prompt: string): Promise<AppTheme | null> =>
 };
 
 export const getDailyInsight = async (dateStr: string, lunarDateStr: string): Promise<DailyInsight | null> => {
-  // OFFLINE IMPLEMENTATION
+  // OFFLINE IMPLEMENTATION - 100% TRAFFIC FREE
   // dateStr is expected to be "YYYY-MM-DD"
   const seed = `${dateStr}-${lunarDateStr}`;
   const rng = createSeededRandom(seed);
@@ -246,9 +246,6 @@ export const getDailyInsight = async (dateStr: string, lunarDateStr: string): Pr
         history = `【历史上的今天】${event}`;
     }
   } catch(e) { /* ignore parse error */ }
-  
-  // Note: No fallback to cultural facts anymore, as requested.
-  // If no history event exists, 'history' stays empty.
 
   const luckyColor = LUCKY_COLORS[Math.floor(rng() * LUCKY_COLORS.length)];
   const luckyNumber = Math.floor(rng() * 99 + 1).toString();
@@ -266,7 +263,17 @@ export const getDailyInsight = async (dateStr: string, lunarDateStr: string): Pr
 };
 
 export const getHoroscope = async (signName: string, dateStr: string): Promise<string | null> => {
-  // 1. Try Gemini API First (Natural, AI-Generated)
+  const cacheKey = `zenlunar_horoscope_cache_${signName}_${dateStr}`;
+  
+  // 1. Check Cache (Save Traffic)
+  try {
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      return cached;
+    }
+  } catch (e) { /* ignore localStorage error */ }
+
+  // 2. Try Gemini API First (Natural, AI-Generated)
   if (ai) {
     try {
       const response = await ai.models.generateContent({
@@ -284,14 +291,17 @@ export const getHoroscope = async (signName: string, dateStr: string): Promise<s
       });
 
       if (response.text) {
-         return response.text.trim();
+         const result = response.text.trim();
+         // Save to cache
+         try { localStorage.setItem(cacheKey, result); } catch(e) {}
+         return result;
       }
     } catch (error) {
       console.warn("Gemini Horoscope API failed, falling back to local database.", error);
     }
   }
 
-  // 2. OFFLINE FALLBACK - Minimalist
+  // 3. OFFLINE FALLBACK - Minimalist
   // Used if API Key is missing OR if API call fails/times out
   const seed = `${dateStr}-${signName}`;
   const rng = createSeededRandom(seed);

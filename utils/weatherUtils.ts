@@ -185,6 +185,23 @@ export const fetchWeather = async (lat: number, lon: number): Promise<Record<str
       return {};
   }
 
+  // Round coords to 2 decimals for cache key to catch nearby repeated calls
+  const cacheLat = lat.toFixed(2);
+  const cacheLon = lon.toFixed(2);
+  const cacheKey = `zenlunar_weather_cache_${cacheLat}_${cacheLon}`;
+  const CACHE_EXPIRY = 3600 * 1000; // 1 Hour
+
+  // 1. Check Cache
+  try {
+     const cachedStr = localStorage.getItem(cacheKey);
+     if (cachedStr) {
+         const cached = JSON.parse(cachedStr);
+         if (Date.now() - cached.timestamp < CACHE_EXPIRY) {
+             return cached.data;
+         }
+     }
+  } catch(e) { /* ignore cache errors */ }
+
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 seconds timeout
@@ -235,6 +252,14 @@ export const fetchWeather = async (lat: number, lon: number): Promise<Record<str
       weatherMap[todayStr].description = currentMap.description;
       weatherMap[todayStr].iconType = currentMap.iconType;
     }
+
+    // Save to Cache
+    try {
+        localStorage.setItem(cacheKey, JSON.stringify({
+            timestamp: Date.now(),
+            data: weatherMap
+        }));
+    } catch(e) {}
 
     return weatherMap;
   } catch (error) {
