@@ -10,6 +10,8 @@ interface AnniversarySettingModalProps {
 }
 
 export const AnniversarySettingModal: React.FC<AnniversarySettingModalProps> = ({ anniversaries, onSave, onClose }) => {
+  const [isVisible, setIsVisible] = useState(false);
+
   const [newMonth, setNewMonth] = useState(new Date().getMonth() + 1);
   const [newDay, setNewDay] = useState(new Date().getDate());
   const [newName, setNewName] = useState('');
@@ -26,6 +28,15 @@ export const AnniversarySettingModal: React.FC<AnniversarySettingModalProps> = (
   };
   
   const days = Array.from({ length: daysInMonth(newMonth) }, (_, i) => i + 1);
+
+  useEffect(() => {
+    requestAnimationFrame(() => setIsVisible(true));
+  }, []);
+
+  const handleClose = () => {
+    setIsVisible(false);
+    setTimeout(onClose, 300);
+  };
 
   // Auto-close picker on outside click
   useEffect(() => {
@@ -60,9 +71,12 @@ export const AnniversarySettingModal: React.FC<AnniversarySettingModalProps> = (
   const sortedAnniversaries = [...anniversaries].sort((a, b) => a.date.localeCompare(b.date));
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div 
+        className={`fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+        onClick={handleClose}
+    >
       <div 
-        className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden relative animate-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]"
+        className={`bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden relative flex flex-col max-h-[85vh] transform transition-all duration-300 ${isVisible ? 'scale-100 translate-y-0 opacity-100' : 'scale-95 translate-y-4 opacity-0'}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-rose-50/50 flex-shrink-0">
@@ -75,7 +89,7 @@ export const AnniversarySettingModal: React.FC<AnniversarySettingModalProps> = (
                 <p className="text-[10px] text-rose-500 font-medium uppercase tracking-wider">Anniversary Reminders</p>
              </div>
            </div>
-           <button onClick={onClose} className="p-2 hover:bg-rose-100 rounded-full transition-colors text-rose-400">
+           <button onClick={handleClose} className="p-2 hover:bg-rose-100 rounded-full transition-colors text-rose-400">
              <X size={20} />
            </button>
         </div>

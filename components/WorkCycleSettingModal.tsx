@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Briefcase, CalendarCheck, CalendarX, Info, ChevronLeft, ChevronRight, Check, CalendarClock, ToggleLeft } from 'lucide-react';
+import { X, Briefcase, CalendarCheck, Info, ChevronLeft, ChevronRight, Check, CalendarClock } from 'lucide-react';
 import { WorkCycleConfig } from '../types';
 import { WEEK_DAYS_CN } from '../constants';
 
@@ -12,6 +12,9 @@ interface WorkCycleSettingModalProps {
 }
 
 export const WorkCycleSettingModal: React.FC<WorkCycleSettingModalProps> = ({ config, mode, onSave, onClose }) => {
+  // Animation State
+  const [isVisible, setIsVisible] = useState(false);
+
   // Cycle Settings
   const [cycleEnabled, setCycleEnabled] = useState(config.cycleEnabled);
   const [cycleMode, setCycleMode] = useState<'alternating' | 'single'>(config.cycleMode || 'alternating');
@@ -25,9 +28,19 @@ export const WorkCycleSettingModal: React.FC<WorkCycleSettingModalProps> = ({ co
   const [viewDate, setViewDate] = useState(new Date());
   const [selectedDates, setSelectedDates] = useState<Set<string>>(new Set());
 
+  useEffect(() => {
+    // Trigger entrance animation
+    requestAnimationFrame(() => setIsVisible(true));
+  }, []);
+
+  const handleClose = () => {
+    setIsVisible(false);
+    setTimeout(onClose, 300); // Wait for animation
+  };
+
   const handleSave = () => {
     onSave({ cycleEnabled, cycleMode, anchorDate, anchorType, exceptions });
-    onClose();
+    handleClose();
   };
 
   const isSaturday = (dateStr: string) => {
@@ -81,9 +94,12 @@ export const WorkCycleSettingModal: React.FC<WorkCycleSettingModalProps> = ({ co
   const gridDays = getMonthDays(viewDate);
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div 
+        className={`fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+        onClick={handleClose}
+    >
       <div 
-        className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden relative animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]"
+        className={`bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden relative flex flex-col max-h-[90vh] transform transition-all duration-300 ${isVisible ? 'scale-100 translate-y-0 opacity-100' : 'scale-95 translate-y-4 opacity-0'}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50 flex-shrink-0">
@@ -100,7 +116,7 @@ export const WorkCycleSettingModal: React.FC<WorkCycleSettingModalProps> = ({ co
                 </>
              )}
            </h3>
-           <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
+           <button onClick={handleClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
              <X size={18} />
            </button>
         </div>
@@ -109,7 +125,7 @@ export const WorkCycleSettingModal: React.FC<WorkCycleSettingModalProps> = ({ co
           
             {/* === MODE: CYCLE SETTINGS === */}
             {mode === 'cycle' && (
-                <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+                <div className="space-y-6">
                      {/* Toggle */}
                      <div className="flex items-center justify-between">
                         <div>
@@ -125,7 +141,7 @@ export const WorkCycleSettingModal: React.FC<WorkCycleSettingModalProps> = ({ co
                     </div>
 
                     {cycleEnabled && (
-                        <div className="space-y-5 pt-4 border-t border-gray-100">
+                        <div className="space-y-5 pt-4 border-t border-gray-100 animate-in fade-in slide-in-from-top-2 duration-300">
                              {/* Mode Selection */}
                              <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-3">工作模式</label>
@@ -191,7 +207,7 @@ export const WorkCycleSettingModal: React.FC<WorkCycleSettingModalProps> = ({ co
 
             {/* === MODE: EXCEPTIONS SETTINGS === */}
             {mode === 'exception' && (
-                <div className="animate-in slide-in-from-right-4 duration-300">
+                <div>
                         <div className="bg-orange-50 p-3 rounded-lg flex gap-2 text-sm text-orange-800 mb-4">
                         <Info size={16} className="flex-shrink-0 mt-0.5" />
                         <span>点击日历选择日期（可多选），然后设置状态。这里的设置优先级最高（覆盖法定节假日和大小周）。</span>
